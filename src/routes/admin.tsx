@@ -1,9 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Package, ShoppingCart, Users, Tag, BarChart3, AlertTriangle,
-  LogOut, Plus, Edit, Trash2, Download, Search, ChevronRight
+  LogOut, Plus, Edit, Trash2, Download, Search, X, Save, Upload, Image as ImageIcon
 } from "lucide-react";
 import { formatPrice } from "@/data/products";
 
@@ -23,14 +23,17 @@ function AdminPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isSignup, setIsSignup] = useState(false);
+  const [success, setSuccess] = useState("");
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       setLoading(false);
     });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
+      setLoading(false);
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -38,15 +41,32 @@ function AdminPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setSuccess("");
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) setError(error.message);
+  };
+
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    const { error } = await supabase.auth.signUp({ email, password });
+    if (error) {
+      setError(error.message);
+    } else {
+      setSuccess("Conta criada com sucesso! Fazendo login...");
+      // Auto-login after signup
+      setTimeout(async () => {
+        await supabase.auth.signInWithPassword({ email, password });
+      }, 1000);
+    }
   };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
   };
 
-  if (loading) return <div className="flex items-center justify-center min-h-screen"><div className="animate-spin w-8 h-8 border-4 border-gold border-t-transparent rounded-full" /></div>;
+  if (loading) return <div className="flex items-center justify-center min-h-screen bg-muted"><div className="animate-spin w-8 h-8 border-4 border-gold border-t-transparent rounded-full" /></div>;
 
   if (!user) {
     return (
@@ -55,11 +75,15 @@ function AdminPage() {
           <h1 className="font-heading text-2xl text-center mb-2">Painel Admin</h1>
           <p className="font-body text-sm text-muted-foreground text-center mb-6">Alba Modas e Acessórios</p>
           {error && <p className="text-sale text-sm font-body mb-4 text-center">{error}</p>}
-          <form onSubmit={handleLogin} className="space-y-4">
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" className="w-full px-4 py-3 rounded-lg bg-muted text-sm font-body focus:outline-none focus:ring-2 focus:ring-gold" required />
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Senha" className="w-full px-4 py-3 rounded-lg bg-muted text-sm font-body focus:outline-none focus:ring-2 focus:ring-gold" required />
-            <button type="submit" className="btn-gold w-full">Entrar</button>
+          {success && <p className="text-green-600 text-sm font-body mb-4 text-center">{success}</p>}
+          <form onSubmit={isSignup ? handleSignup : handleLogin} className="space-y-4">
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" className="w-full px-4 py-3 rounded-lg bg-muted text-sm font-body focus:outline-none focus:ring-2 focus:ring-gold border border-border" required />
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Senha (mínimo 6 caracteres)" className="w-full px-4 py-3 rounded-lg bg-muted text-sm font-body focus:outline-none focus:ring-2 focus:ring-gold border border-border" required minLength={6} />
+            <button type="submit" className="btn-gold w-full">{isSignup ? "Criar Conta" : "Entrar"}</button>
           </form>
+          <button onClick={() => { setIsSignup(!isSignup); setError(""); setSuccess(""); }} className="w-full text-center text-sm font-body text-muted-foreground mt-4 hover:text-foreground transition-colors">
+            {isSignup ? "Já tem conta? Fazer login" : "Primeiro acesso? Criar conta"}
+          </button>
         </div>
       </div>
     );
@@ -82,14 +106,14 @@ function AdminPage() {
           <span className="text-xs opacity-60 font-body">Admin</span>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-xs font-body opacity-80">{user.email}</span>
+          <span className="text-xs font-body opacity-80 hidden sm:inline">{user.email}</span>
           <button onClick={handleLogout} className="p-2 hover:bg-primary-foreground/10 rounded-lg transition-colors">
             <LogOut className="w-4 h-4" />
           </button>
         </div>
       </header>
 
-      <div className="flex">
+      <div className="flex flex-col md:flex-row">
         <aside className="w-56 bg-card border-r border-border min-h-[calc(100vh-52px)] hidden md:block">
           <nav className="p-4 space-y-1">
             {tabs.map(t => (
@@ -142,12 +166,7 @@ function DashboardTab() {
         supabase.from("leads").select("id", { count: "exact" }),
       ]);
       const lowStock = (p.data ?? []).filter(x => (x.stock ?? 0) <= 3).length;
-      setStats({
-        products: p.count ?? 0,
-        orders: o.count ?? 0,
-        lowStock,
-        leads: l.count ?? 0,
-      });
+      setStats({ products: p.count ?? 0, orders: o.count ?? 0, lowStock, leads: l.count ?? 0 });
     };
     load();
   }, []);
@@ -174,26 +193,187 @@ function DashboardTab() {
   );
 }
 
+// Product form type
+interface ProductForm {
+  name: string;
+  slug: string;
+  description: string;
+  category: string;
+  price: number;
+  sale_price: number | null;
+  image: string;
+  image2: string;
+  colors: string[];
+  sizes: string[];
+  stock: number;
+  badge: string;
+  active: boolean;
+}
+
+const emptyProduct: ProductForm = {
+  name: "", slug: "", description: "", category: "feminino",
+  price: 0, sale_price: null, image: "", image2: "",
+  colors: [], sizes: [], stock: 0, badge: "", active: true,
+};
+
 function ProdutosTab() {
   const [products, setProducts] = useState<any[]>([]);
   const [search, setSearch] = useState("");
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState<ProductForm>({ ...emptyProduct });
+  const [saving, setSaving] = useState(false);
+  const [colorsInput, setColorsInput] = useState("");
+  const [sizesInput, setSizesInput] = useState("");
 
-  useEffect(() => {
-    supabase.from("products").select("*").order("created_at", { ascending: false }).then(({ data }) => setProducts(data ?? []));
+  const load = useCallback(async () => {
+    const { data } = await supabase.from("products").select("*").order("created_at", { ascending: false });
+    setProducts(data ?? []);
   }, []);
+
+  useEffect(() => { load(); }, [load]);
 
   const filtered = products.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
 
+  const openNew = () => {
+    setForm({ ...emptyProduct });
+    setColorsInput("");
+    setSizesInput("");
+    setEditingId(null);
+    setShowForm(true);
+  };
+
+  const openEdit = (p: any) => {
+    setForm({
+      name: p.name, slug: p.slug, description: p.description || "",
+      category: p.category, price: p.price, sale_price: p.sale_price,
+      image: p.image || "", image2: p.image2 || "",
+      colors: p.colors || [], sizes: p.sizes || [],
+      stock: p.stock ?? 0, badge: p.badge || "", active: p.active ?? true,
+    });
+    setColorsInput((p.colors || []).join(", "));
+    setSizesInput((p.sizes || []).join(", "));
+    setEditingId(p.id);
+    setShowForm(true);
+  };
+
+  const generateSlug = (name: string) => name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+  const handleSave = async () => {
+    setSaving(true);
+    const payload = {
+      ...form,
+      colors: colorsInput.split(",").map(s => s.trim()).filter(Boolean),
+      sizes: sizesInput.split(",").map(s => s.trim()).filter(Boolean),
+      slug: form.slug || generateSlug(form.name),
+    };
+
+    if (editingId) {
+      await supabase.from("products").update(payload).eq("id", editingId);
+    } else {
+      await supabase.from("products").insert(payload);
+    }
+    setSaving(false);
+    setShowForm(false);
+    load();
+  };
+
   const deleteProduct = async (id: string) => {
+    if (!confirm("Excluir este produto?")) return;
     await supabase.from("products").delete().eq("id", id);
     setProducts(prev => prev.filter(p => p.id !== id));
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: "image" | "image2") => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const ext = file.name.split(".").pop();
+    const path = `products/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const { data, error } = await supabase.storage.from("product-images").upload(path, file);
+    if (!error && data) {
+      const { data: urlData } = supabase.storage.from("product-images").getPublicUrl(data.path);
+      setForm(f => ({ ...f, [field]: urlData.publicUrl }));
+    }
   };
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h2 className="font-heading text-xl">Produtos</h2>
+        <button onClick={openNew} className="btn-gold text-xs py-2 px-3 flex items-center gap-1"><Plus className="w-3 h-3" /> Novo Produto</button>
       </div>
+
+      {showForm && (
+        <div className="bg-card rounded-xl p-5 shadow-sm mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-heading text-lg">{editingId ? "Editar Produto" : "Novo Produto"}</h3>
+            <button onClick={() => setShowForm(false)}><X className="w-5 h-5" /></button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-3">
+              <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value, slug: generateSlug(e.target.value) }))} placeholder="Nome do produto" className="w-full px-3 py-2 rounded-lg bg-muted text-sm font-body border border-border" />
+              <input value={form.slug} onChange={e => setForm(f => ({ ...f, slug: e.target.value }))} placeholder="Slug (URL)" className="w-full px-3 py-2 rounded-lg bg-muted text-sm font-body border border-border" />
+              <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Descrição" rows={3} className="w-full px-3 py-2 rounded-lg bg-muted text-sm font-body border border-border resize-none" />
+              <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className="w-full px-3 py-2 rounded-lg bg-muted text-sm font-body border border-border">
+                <option value="feminino">Feminino</option>
+                <option value="masculino">Masculino</option>
+                <option value="infantil">Infantil</option>
+                <option value="calcados">Calçados</option>
+                <option value="perfumes">Perfumes & Hidratantes</option>
+                <option value="acessorios">Acessórios</option>
+              </select>
+              <div className="grid grid-cols-2 gap-3">
+                <input type="number" step="0.01" value={form.price || ""} onChange={e => setForm(f => ({ ...f, price: Number(e.target.value) }))} placeholder="Preço (R$)" className="w-full px-3 py-2 rounded-lg bg-muted text-sm font-body border border-border" />
+                <input type="number" step="0.01" value={form.sale_price ?? ""} onChange={e => setForm(f => ({ ...f, sale_price: e.target.value ? Number(e.target.value) : null }))} placeholder="Preço Promocional" className="w-full px-3 py-2 rounded-lg bg-muted text-sm font-body border border-border" />
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-body text-muted-foreground mb-1">Imagem principal (URL ou upload)</label>
+                <div className="flex gap-2">
+                  <input value={form.image} onChange={e => setForm(f => ({ ...f, image: e.target.value }))} placeholder="URL da imagem" className="flex-1 px-3 py-2 rounded-lg bg-muted text-sm font-body border border-border" />
+                  <label className="btn-outline-dark text-xs py-2 px-3 cursor-pointer flex items-center gap-1">
+                    <Upload className="w-3 h-3" />
+                    <input type="file" accept="image/*" className="hidden" onChange={e => handleImageUpload(e, "image")} />
+                  </label>
+                </div>
+                {form.image && <img src={form.image} alt="" className="w-20 h-20 rounded object-cover mt-2" />}
+              </div>
+              <div>
+                <label className="block text-xs font-body text-muted-foreground mb-1">Imagem secundária</label>
+                <div className="flex gap-2">
+                  <input value={form.image2} onChange={e => setForm(f => ({ ...f, image2: e.target.value }))} placeholder="URL da imagem 2" className="flex-1 px-3 py-2 rounded-lg bg-muted text-sm font-body border border-border" />
+                  <label className="btn-outline-dark text-xs py-2 px-3 cursor-pointer flex items-center gap-1">
+                    <Upload className="w-3 h-3" />
+                    <input type="file" accept="image/*" className="hidden" onChange={e => handleImageUpload(e, "image2")} />
+                  </label>
+                </div>
+              </div>
+              <input value={colorsInput} onChange={e => setColorsInput(e.target.value)} placeholder="Cores (separadas por vírgula)" className="w-full px-3 py-2 rounded-lg bg-muted text-sm font-body border border-border" />
+              <input value={sizesInput} onChange={e => setSizesInput(e.target.value)} placeholder="Tamanhos (separados por vírgula)" className="w-full px-3 py-2 rounded-lg bg-muted text-sm font-body border border-border" />
+              <div className="grid grid-cols-2 gap-3">
+                <input type="number" value={form.stock} onChange={e => setForm(f => ({ ...f, stock: parseInt(e.target.value) || 0 }))} placeholder="Estoque" className="w-full px-3 py-2 rounded-lg bg-muted text-sm font-body border border-border" />
+                <select value={form.badge} onChange={e => setForm(f => ({ ...f, badge: e.target.value }))} className="w-full px-3 py-2 rounded-lg bg-muted text-sm font-body border border-border">
+                  <option value="">Sem badge</option>
+                  <option value="novo">Novidade</option>
+                  <option value="promo">Promoção</option>
+                  <option value="bestseller">Mais Vendido</option>
+                </select>
+              </div>
+              <label className="flex items-center gap-2 text-sm font-body">
+                <input type="checkbox" checked={form.active} onChange={e => setForm(f => ({ ...f, active: e.target.checked }))} className="rounded" />
+                Produto ativo
+              </label>
+            </div>
+          </div>
+          <div className="flex justify-end mt-4">
+            <button onClick={handleSave} disabled={saving || !form.name || !form.price} className="btn-gold text-xs py-2 px-6 flex items-center gap-1 disabled:opacity-50">
+              <Save className="w-3 h-3" /> {saving ? "Salvando..." : editingId ? "Salvar Alterações" : "Criar Produto"}
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="relative mb-4">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar produto..." className="w-full pl-10 pr-4 py-2 rounded-lg bg-card text-sm font-body border border-border focus:outline-none focus:ring-2 focus:ring-gold" />
@@ -206,14 +386,15 @@ function ProdutosTab() {
               <tr key={p.id} className="border-b border-border/50 hover:bg-muted/30">
                 <td className="p-3">
                   <div className="flex items-center gap-3">
-                    {p.image && <img src={p.image} alt="" className="w-10 h-10 rounded object-cover" />}
+                    {p.image ? <img src={p.image} alt="" className="w-10 h-10 rounded object-cover" /> : <div className="w-10 h-10 rounded bg-muted flex items-center justify-center"><ImageIcon className="w-4 h-4 text-muted-foreground" /></div>}
                     <span className="font-medium truncate max-w-[200px]">{p.name}</span>
                   </div>
                 </td>
                 <td className="p-3 hidden md:table-cell capitalize">{p.category}</td>
                 <td className="p-3 text-right">{p.sale_price ? <><span className="line-through text-muted-foreground mr-1">{formatPrice(p.price)}</span><span className="text-sale">{formatPrice(p.sale_price)}</span></> : formatPrice(p.price)}</td>
                 <td className="p-3 text-center"><span className={`px-2 py-0.5 rounded text-xs ${(p.stock ?? 0) <= 3 ? "bg-sale/10 text-sale" : "bg-gold/10 text-gold"}`}>{p.stock ?? 0}</span></td>
-                <td className="p-3 text-center">
+                <td className="p-3 text-center flex items-center justify-center gap-1">
+                  <button onClick={() => openEdit(p)} className="p-1.5 hover:bg-gold/10 rounded text-gold"><Edit className="w-4 h-4" /></button>
                   <button onClick={() => deleteProduct(p.id)} className="p-1.5 hover:bg-sale/10 rounded text-sale"><Trash2 className="w-4 h-4" /></button>
                 </td>
               </tr>
@@ -306,13 +487,7 @@ function EstoqueTab() {
               <tr key={p.id} className={`border-b border-border/50 ${(p.stock ?? 0) <= 2 ? "bg-sale/5" : ""}`}>
                 <td className="p-3 font-medium">{p.name}</td>
                 <td className="p-3 text-center">
-                  <input
-                    type="number"
-                    value={p.stock ?? 0}
-                    onChange={e => updateStock(p.id, parseInt(e.target.value) || 0)}
-                    className="w-16 text-center px-2 py-1 rounded bg-muted border border-border text-sm"
-                    min={0}
-                  />
+                  <input type="number" value={p.stock ?? 0} onChange={e => updateStock(p.id, parseInt(e.target.value) || 0)} className="w-16 text-center px-2 py-1 rounded bg-muted border border-border text-sm" min={0} />
                 </td>
                 <td className="p-3 text-center">
                   <span className={`px-2 py-0.5 rounded text-xs ${(p.stock ?? 0) === 0 ? "bg-sale/10 text-sale" : (p.stock ?? 0) <= 2 ? "bg-orange-100 text-orange-700" : "bg-green-100 text-green-700"}`}>

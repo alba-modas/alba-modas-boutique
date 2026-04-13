@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Star, ChevronRight, Truck, RotateCcw, MessageCircle, ShieldCheck, ArrowRight } from "lucide-react";
+import { Star, ChevronRight, Truck, RotateCcw, MessageCircle, ShieldCheck, ArrowRight, Plus, Check } from "lucide-react";
+import { useState } from "react";
 import ProductCard from "@/components/ProductCard";
 import {
-  categories, novidades, bestSellers, testimonials, outfitCombos,
+  categories, novidades, bestSellers, testimonials, outfitCombos, allProducts,
   formatPrice, INSTAGRAM,
 } from "@/data/products";
 import heroBanner from "@/assets/hero-banner.jpg";
@@ -115,25 +116,25 @@ function CategoriesGrid() {
 
 function ProductSection({ title, products, scrollable = false }: { title: string; products: typeof novidades; scrollable?: boolean }) {
   return (
-    <section className="py-16 bg-secondary/30">
+    <section className="py-12 bg-secondary/30">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-6">
           <h2 className="font-heading text-2xl md:text-3xl">{title}</h2>
           <Link to="/produtos" className="text-sm font-medium text-gold flex items-center gap-1 hover:gap-2 transition-all">
             Ver Todas <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
         {scrollable ? (
-          <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory hide-scrollbar">
+          <div className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory hide-scrollbar">
             {products.map(p => (
-              <div key={p.id} className="min-w-[180px] sm:min-w-[220px] snap-start flex-shrink-0">
-                <ProductCard product={p} />
+              <div key={p.id} className="min-w-[150px] max-w-[170px] sm:min-w-[170px] sm:max-w-[190px] snap-start flex-shrink-0">
+                <ProductCard product={p} compact />
               </div>
             ))}
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {products.map(p => <ProductCard key={p.id} product={p} />)}
+            {products.map(p => <ProductCard key={p.id} product={p} compact />)}
           </div>
         )}
       </div>
@@ -143,16 +144,16 @@ function ProductSection({ title, products, scrollable = false }: { title: string
 
 function BestSellers() {
   return (
-    <section className="py-16">
+    <section className="py-12">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-6">
           <h2 className="font-heading text-2xl md:text-3xl">Mais Vendidos</h2>
           <Link to="/produtos" className="text-sm font-medium text-gold flex items-center gap-1 hover:gap-2 transition-all">
             Ver Todos <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {bestSellers.map(p => <ProductCard key={p.id} product={p} />)}
+        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          {bestSellers.map(p => <ProductCard key={p.id} product={p} compact />)}
         </div>
       </div>
     </section>
@@ -160,40 +161,105 @@ function BestSellers() {
 }
 
 function MonteSeuLook() {
+  const [mode, setMode] = useState<"pronto" | "livre">("pronto");
+  const [selectedProducts, setSelectedProducts] = useState<typeof allProducts>([]);
+
+  const toggleProduct = (product: typeof allProducts[0]) => {
+    setSelectedProducts(prev => {
+      const exists = prev.find(p => p.id === product.id);
+      if (exists) return prev.filter(p => p.id !== product.id);
+      if (prev.length >= 5) return prev;
+      return [...prev, product];
+    });
+  };
+
+  const selectedTotal = selectedProducts.reduce((s, p) => s + (p.salePrice ?? p.price), 0);
+
   return (
-    <section className="py-16 bg-secondary/30">
+    <section className="py-12 bg-secondary/30">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="text-center mb-10">
+        <div className="text-center mb-8">
           <h2 className="font-heading text-2xl md:text-3xl">Monte seu Look</h2>
-          <p className="font-body text-sm text-muted-foreground mt-2">Combinações prontas para você arrasar</p>
+          <p className="font-body text-sm text-muted-foreground mt-2">Escolha combinações prontas ou monte o seu look do seu jeito</p>
+          <div className="flex justify-center gap-2 mt-4">
+            <button onClick={() => setMode("pronto")} className={`px-4 py-2 rounded-lg text-sm font-body font-medium transition-colors ${mode === "pronto" ? "bg-gold text-gold-foreground" : "bg-card border border-border"}`}>
+              Looks Prontos
+            </button>
+            <button onClick={() => setMode("livre")} className={`px-4 py-2 rounded-lg text-sm font-body font-medium transition-colors ${mode === "livre" ? "bg-gold text-gold-foreground" : "bg-card border border-border"}`}>
+              Montar Livre
+            </button>
+          </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {outfitCombos.map((combo, i) => {
-            const total = combo.products.filter(Boolean).reduce((s, p) => s + (p.salePrice ?? p.price), 0);
-            return (
-              <div key={i} className="bg-card rounded-xl p-6 shadow-sm">
-                <h3 className="font-heading text-lg mb-4">{combo.title}</h3>
-                <div className="flex gap-2 mb-4">
-                  {combo.products.filter(Boolean).map(p => (
-                    <img key={p.id} src={p.image} alt={p.name} className="w-1/3 aspect-square object-cover rounded-lg" loading="lazy" />
-                  ))}
+
+        {mode === "pronto" ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {outfitCombos.map((combo, i) => {
+              const total = combo.products.filter(Boolean).reduce((s, p) => s + (p.salePrice ?? p.price), 0);
+              return (
+                <div key={i} className="bg-card rounded-xl p-5 shadow-sm">
+                  <h3 className="font-heading text-lg mb-3">{combo.title}</h3>
+                  <div className="flex gap-2 mb-3">
+                    {combo.products.filter(Boolean).map(p => (
+                      <img key={p.id} src={p.image} alt={p.name} className="w-1/3 aspect-square object-cover rounded-lg" loading="lazy" />
+                    ))}
+                  </div>
+                  <div className="space-y-1 mb-3">
+                    {combo.products.filter(Boolean).map(p => (
+                      <div key={p.id} className="flex justify-between font-body text-xs">
+                        <span className="truncate mr-2">{p.name}</span>
+                        <span className="font-medium whitespace-nowrap">{formatPrice(p.salePrice ?? p.price)}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex items-center justify-between border-t border-border pt-3">
+                    <span className="font-body text-sm font-bold">Total: {formatPrice(total)}</span>
+                    <button className="btn-gold text-xs py-2 px-4">Ver Look</button>
+                  </div>
                 </div>
-                <div className="space-y-1 mb-4">
-                  {combo.products.filter(Boolean).map(p => (
-                    <div key={p.id} className="flex justify-between font-body text-xs">
-                      <span className="truncate mr-2">{p.name}</span>
-                      <span className="font-medium whitespace-nowrap">{formatPrice(p.salePrice ?? p.price)}</span>
+              );
+            })}
+          </div>
+        ) : (
+          <div>
+            {selectedProducts.length > 0 && (
+              <div className="bg-card rounded-xl p-5 shadow-sm mb-6">
+                <h3 className="font-heading text-lg mb-3">Seu Look ({selectedProducts.length} peças)</h3>
+                <div className="flex gap-2 mb-3 overflow-x-auto pb-2">
+                  {selectedProducts.map(p => (
+                    <div key={p.id} className="relative min-w-[80px]">
+                      <img src={p.image} alt={p.name} className="w-20 h-20 object-cover rounded-lg" />
+                      <button onClick={() => toggleProduct(p)} className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-sale text-sale-foreground rounded-full flex items-center justify-center text-xs">×</button>
                     </div>
                   ))}
                 </div>
                 <div className="flex items-center justify-between border-t border-border pt-3">
-                  <span className="font-body text-sm font-bold">Total: {formatPrice(total)}</span>
-                  <button className="btn-gold text-xs py-2 px-4">Ver Look Completo</button>
+                  <span className="font-body text-sm font-bold">Total: {formatPrice(selectedTotal)}</span>
+                  <button className="btn-gold text-xs py-2 px-4">Adicionar ao Carrinho</button>
                 </div>
               </div>
-            );
-          })}
-        </div>
+            )}
+            <p className="font-body text-xs text-muted-foreground mb-3">Selecione até 5 peças para montar seu look:</p>
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+              {allProducts.map(p => {
+                const isSelected = selectedProducts.some(s => s.id === p.id);
+                return (
+                  <button key={p.id} onClick={() => toggleProduct(p)} className={`relative rounded-lg overflow-hidden border-2 transition-colors ${isSelected ? "border-gold" : "border-transparent"}`}>
+                    <img src={p.image} alt={p.name} className="w-full aspect-square object-cover" loading="lazy" />
+                    {isSelected && (
+                      <div className="absolute top-1 right-1 w-5 h-5 bg-gold rounded-full flex items-center justify-center">
+                        <Check className="w-3 h-3 text-gold-foreground" />
+                      </div>
+                    )}
+                    <div className="p-1.5">
+                      <p className="font-body text-[10px] truncate">{p.name}</p>
+                      <p className="font-body text-[10px] font-bold">{formatPrice(p.salePrice ?? p.price)}</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );
