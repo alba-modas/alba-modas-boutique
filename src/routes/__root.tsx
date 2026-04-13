@@ -1,4 +1,4 @@
-import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { Outlet, Link, createRootRoute, HeadContent, Scripts, useLocation } from "@tanstack/react-router";
 import appCss from "../styles.css?url";
 import Layout from "@/components/Layout";
 import { CartProvider } from "@/hooks/useCart";
@@ -58,6 +58,13 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
+  const location = useLocation();
+  const isAdmin = location.pathname.startsWith("/admin");
+
+  if (isAdmin) {
+    return <Outlet />;
+  }
+
   return (
     <CartProvider>
       <Layout>
