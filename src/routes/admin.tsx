@@ -1,0 +1,459 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  Package, ShoppingCart, Users, Tag, BarChart3, AlertTriangle,
+  LogOut, Plus, Edit, Trash2, Download, Search, ChevronRight
+} from "lucide-react";
+import { formatPrice } from "@/data/products";
+
+export const Route = createFileRoute("/admin")({
+  head: () => ({
+    meta: [{ title: "Admin — Alba Modas" }],
+  }),
+  component: AdminPage,
+});
+
+type Tab = "dashboard" | "produtos" | "pedidos" | "estoque" | "leads" | "cupons";
+
+function AdminPage() {
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<Tab>("dashboard");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) setError(error.message);
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
+
+  if (loading) return <div className="flex items-center justify-center min-h-screen"><div className="animate-spin w-8 h-8 border-4 border-gold border-t-transparent rounded-full" /></div>;
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-muted px-4">
+        <div className="bg-card rounded-xl shadow-lg p-8 w-full max-w-md">
+          <h1 className="font-heading text-2xl text-center mb-2">Painel Admin</h1>
+          <p className="font-body text-sm text-muted-foreground text-center mb-6">Alba Modas e Acessórios</p>
+          {error && <p className="text-sale text-sm font-body mb-4 text-center">{error}</p>}
+          <form onSubmit={handleLogin} className="space-y-4">
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" className="w-full px-4 py-3 rounded-lg bg-muted text-sm font-body focus:outline-none focus:ring-2 focus:ring-gold" required />
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Senha" className="w-full px-4 py-3 rounded-lg bg-muted text-sm font-body focus:outline-none focus:ring-2 focus:ring-gold" required />
+            <button type="submit" className="btn-gold w-full">Entrar</button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
+    { key: "dashboard", label: "Dashboard", icon: <BarChart3 className="w-4 h-4" /> },
+    { key: "produtos", label: "Produtos", icon: <Package className="w-4 h-4" /> },
+    { key: "pedidos", label: "Pedidos", icon: <ShoppingCart className="w-4 h-4" /> },
+    { key: "estoque", label: "Estoque", icon: <AlertTriangle className="w-4 h-4" /> },
+    { key: "leads", label: "Leads", icon: <Users className="w-4 h-4" /> },
+    { key: "cupons", label: "Cupons", icon: <Tag className="w-4 h-4" /> },
+  ];
+
+  return (
+    <div className="min-h-screen bg-muted">
+      <header className="bg-primary text-primary-foreground px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Link to="/" className="font-heading text-lg">Alba Modas</Link>
+          <span className="text-xs opacity-60 font-body">Admin</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-body opacity-80">{user.email}</span>
+          <button onClick={handleLogout} className="p-2 hover:bg-primary-foreground/10 rounded-lg transition-colors">
+            <LogOut className="w-4 h-4" />
+          </button>
+        </div>
+      </header>
+
+      <div className="flex">
+        <aside className="w-56 bg-card border-r border-border min-h-[calc(100vh-52px)] hidden md:block">
+          <nav className="p-4 space-y-1">
+            {tabs.map(t => (
+              <button
+                key={t.key}
+                onClick={() => setTab(t.key)}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-body transition-colors ${tab === t.key ? "bg-gold/10 text-gold font-medium" : "hover:bg-muted"}`}
+              >
+                {t.icon}
+                {t.label}
+              </button>
+            ))}
+          </nav>
+        </aside>
+
+        <div className="md:hidden flex overflow-x-auto border-b border-border bg-card px-2 gap-1 hide-scrollbar">
+          {tabs.map(t => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`flex items-center gap-1.5 px-3 py-2.5 text-xs font-body whitespace-nowrap border-b-2 transition-colors ${tab === t.key ? "border-gold text-gold" : "border-transparent text-muted-foreground"}`}
+            >
+              {t.icon}
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        <main className="flex-1 p-4 md:p-6 overflow-auto">
+          {tab === "dashboard" && <DashboardTab />}
+          {tab === "produtos" && <ProdutosTab />}
+          {tab === "pedidos" && <PedidosTab />}
+          {tab === "estoque" && <EstoqueTab />}
+          {tab === "leads" && <LeadsTab />}
+          {tab === "cupons" && <CuponsTab />}
+        </main>
+      </div>
+    </div>
+  );
+}
+
+function DashboardTab() {
+  const [stats, setStats] = useState({ products: 0, orders: 0, lowStock: 0, leads: 0 });
+
+  useEffect(() => {
+    const load = async () => {
+      const [p, o, l] = await Promise.all([
+        supabase.from("products").select("id, stock", { count: "exact" }),
+        supabase.from("orders").select("id", { count: "exact" }),
+        supabase.from("leads").select("id", { count: "exact" }),
+      ]);
+      const lowStock = (p.data ?? []).filter(x => (x.stock ?? 0) <= 3).length;
+      setStats({
+        products: p.count ?? 0,
+        orders: o.count ?? 0,
+        lowStock,
+        leads: l.count ?? 0,
+      });
+    };
+    load();
+  }, []);
+
+  const cards = [
+    { label: "Total Produtos", value: stats.products, icon: <Package className="w-6 h-6 text-gold" /> },
+    { label: "Pedidos Recebidos", value: stats.orders, icon: <ShoppingCart className="w-6 h-6 text-gold" /> },
+    { label: "Estoque Baixo", value: stats.lowStock, icon: <AlertTriangle className="w-6 h-6 text-sale" /> },
+    { label: "Leads Capturados", value: stats.leads, icon: <Users className="w-6 h-6 text-gold" /> },
+  ];
+
+  return (
+    <div>
+      <h2 className="font-heading text-xl mb-6">Dashboard</h2>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {cards.map(c => (
+          <div key={c.label} className="bg-card rounded-xl p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-3">{c.icon}<span className="font-heading text-2xl">{c.value}</span></div>
+            <p className="font-body text-xs text-muted-foreground">{c.label}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ProdutosTab() {
+  const [products, setProducts] = useState<any[]>([]);
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    supabase.from("products").select("*").order("created_at", { ascending: false }).then(({ data }) => setProducts(data ?? []));
+  }, []);
+
+  const filtered = products.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
+
+  const deleteProduct = async (id: string) => {
+    await supabase.from("products").delete().eq("id", id);
+    setProducts(prev => prev.filter(p => p.id !== id));
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="font-heading text-xl">Produtos</h2>
+      </div>
+      <div className="relative mb-4">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar produto..." className="w-full pl-10 pr-4 py-2 rounded-lg bg-card text-sm font-body border border-border focus:outline-none focus:ring-2 focus:ring-gold" />
+      </div>
+      <div className="bg-card rounded-xl shadow-sm overflow-hidden">
+        <table className="w-full text-sm font-body">
+          <thead><tr className="border-b border-border bg-muted/50"><th className="text-left p-3">Produto</th><th className="text-left p-3 hidden md:table-cell">Categoria</th><th className="text-right p-3">Preço</th><th className="text-center p-3">Estoque</th><th className="text-center p-3">Ações</th></tr></thead>
+          <tbody>
+            {filtered.map(p => (
+              <tr key={p.id} className="border-b border-border/50 hover:bg-muted/30">
+                <td className="p-3">
+                  <div className="flex items-center gap-3">
+                    {p.image && <img src={p.image} alt="" className="w-10 h-10 rounded object-cover" />}
+                    <span className="font-medium truncate max-w-[200px]">{p.name}</span>
+                  </div>
+                </td>
+                <td className="p-3 hidden md:table-cell capitalize">{p.category}</td>
+                <td className="p-3 text-right">{p.sale_price ? <><span className="line-through text-muted-foreground mr-1">{formatPrice(p.price)}</span><span className="text-sale">{formatPrice(p.sale_price)}</span></> : formatPrice(p.price)}</td>
+                <td className="p-3 text-center"><span className={`px-2 py-0.5 rounded text-xs ${(p.stock ?? 0) <= 3 ? "bg-sale/10 text-sale" : "bg-gold/10 text-gold"}`}>{p.stock ?? 0}</span></td>
+                <td className="p-3 text-center">
+                  <button onClick={() => deleteProduct(p.id)} className="p-1.5 hover:bg-sale/10 rounded text-sale"><Trash2 className="w-4 h-4" /></button>
+                </td>
+              </tr>
+            ))}
+            {filtered.length === 0 && <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">Nenhum produto encontrado</td></tr>}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function PedidosTab() {
+  const [orders, setOrders] = useState<any[]>([]);
+
+  useEffect(() => {
+    supabase.from("orders").select("*").order("created_at", { ascending: false }).then(({ data }) => setOrders(data ?? []));
+  }, []);
+
+  const statusColors: Record<string, string> = {
+    recebido: "bg-blue-100 text-blue-700",
+    confirmado: "bg-gold/10 text-gold",
+    separando: "bg-orange-100 text-orange-700",
+    enviado: "bg-purple-100 text-purple-700",
+    entregue: "bg-green-100 text-green-700",
+  };
+
+  const updateStatus = async (id: string, status: string) => {
+    await supabase.from("orders").update({ status }).eq("id", id);
+    setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
+  };
+
+  return (
+    <div>
+      <h2 className="font-heading text-xl mb-6">Pedidos</h2>
+      <div className="space-y-4">
+        {orders.map(o => (
+          <div key={o.id} className="bg-card rounded-xl p-5 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <div>
+                <span className="font-body text-xs text-muted-foreground">{new Date(o.created_at).toLocaleDateString("pt-BR")}</span>
+                <h3 className="font-body font-medium">{o.customer_name || "Sem nome"}</h3>
+                <p className="font-body text-xs text-muted-foreground">{o.customer_phone}</p>
+              </div>
+              <div className="text-right">
+                <span className="font-heading text-lg">{formatPrice(Number(o.total))}</span>
+                <div className="mt-1">
+                  <select
+                    value={o.status}
+                    onChange={e => updateStatus(o.id, e.target.value)}
+                    className={`text-xs font-body px-2 py-1 rounded border-none ${statusColors[o.status] ?? ""}`}
+                  >
+                    <option value="recebido">Recebido</option>
+                    <option value="confirmado">Confirmado</option>
+                    <option value="separando">Separando</option>
+                    <option value="enviado">Enviado</option>
+                    <option value="entregue">Entregue</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+        {orders.length === 0 && <p className="text-center text-muted-foreground font-body py-12">Nenhum pedido recebido ainda</p>}
+      </div>
+    </div>
+  );
+}
+
+function EstoqueTab() {
+  const [products, setProducts] = useState<any[]>([]);
+
+  useEffect(() => {
+    supabase.from("products").select("*").order("stock", { ascending: true }).then(({ data }) => setProducts(data ?? []));
+  }, []);
+
+  const updateStock = async (id: string, stock: number) => {
+    await supabase.from("products").update({ stock }).eq("id", id);
+    setProducts(prev => prev.map(p => p.id === id ? { ...p, stock } : p));
+  };
+
+  return (
+    <div>
+      <h2 className="font-heading text-xl mb-6">Estoque</h2>
+      <div className="bg-card rounded-xl shadow-sm overflow-hidden">
+        <table className="w-full text-sm font-body">
+          <thead><tr className="border-b border-border bg-muted/50"><th className="text-left p-3">Produto</th><th className="text-center p-3">Estoque</th><th className="text-center p-3">Status</th></tr></thead>
+          <tbody>
+            {products.map(p => (
+              <tr key={p.id} className={`border-b border-border/50 ${(p.stock ?? 0) <= 2 ? "bg-sale/5" : ""}`}>
+                <td className="p-3 font-medium">{p.name}</td>
+                <td className="p-3 text-center">
+                  <input
+                    type="number"
+                    value={p.stock ?? 0}
+                    onChange={e => updateStock(p.id, parseInt(e.target.value) || 0)}
+                    className="w-16 text-center px-2 py-1 rounded bg-muted border border-border text-sm"
+                    min={0}
+                  />
+                </td>
+                <td className="p-3 text-center">
+                  <span className={`px-2 py-0.5 rounded text-xs ${(p.stock ?? 0) === 0 ? "bg-sale/10 text-sale" : (p.stock ?? 0) <= 2 ? "bg-orange-100 text-orange-700" : "bg-green-100 text-green-700"}`}>
+                    {(p.stock ?? 0) === 0 ? "Esgotado" : (p.stock ?? 0) <= 2 ? "Baixo" : "OK"}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function LeadsTab() {
+  const [leads, setLeads] = useState<any[]>([]);
+
+  useEffect(() => {
+    supabase.from("leads").select("*").order("created_at", { ascending: false }).then(({ data }) => setLeads(data ?? []));
+  }, []);
+
+  const exportCSV = () => {
+    const csv = "Telefone,Data\n" + leads.map(l => `${l.phone},${new Date(l.created_at).toLocaleDateString("pt-BR")}`).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "leads-alba-modas.csv";
+    a.click();
+  };
+
+  const copyAll = () => {
+    const text = leads.map(l => l.phone).join("\n");
+    navigator.clipboard.writeText(text);
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="font-heading text-xl">Leads ({leads.length})</h2>
+        <div className="flex gap-2">
+          <button onClick={copyAll} className="btn-outline-dark text-xs py-2 px-3">Copiar Todos</button>
+          <button onClick={exportCSV} className="btn-gold text-xs py-2 px-3 flex items-center gap-1"><Download className="w-3 h-3" /> Exportar CSV</button>
+        </div>
+      </div>
+      <div className="bg-card rounded-xl shadow-sm overflow-hidden">
+        <table className="w-full text-sm font-body">
+          <thead><tr className="border-b border-border bg-muted/50"><th className="text-left p-3">WhatsApp</th><th className="text-left p-3">Data</th></tr></thead>
+          <tbody>
+            {leads.map(l => (
+              <tr key={l.id} className="border-b border-border/50">
+                <td className="p-3">{l.phone}</td>
+                <td className="p-3 text-muted-foreground">{new Date(l.created_at).toLocaleDateString("pt-BR")}</td>
+              </tr>
+            ))}
+            {leads.length === 0 && <tr><td colSpan={2} className="p-8 text-center text-muted-foreground">Nenhum lead capturado ainda</td></tr>}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function CuponsTab() {
+  const [coupons, setCoupons] = useState<any[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ code: "", discount_type: "percent", discount_value: 10, usage_limit: 100 });
+
+  useEffect(() => {
+    supabase.from("coupons").select("*").order("created_at", { ascending: false }).then(({ data }) => setCoupons(data ?? []));
+  }, []);
+
+  const createCoupon = async () => {
+    const { data } = await supabase.from("coupons").insert({
+      code: form.code.toUpperCase(),
+      discount_type: form.discount_type,
+      discount_value: form.discount_value,
+      usage_limit: form.usage_limit,
+      active: true,
+    }).select().single();
+    if (data) setCoupons(prev => [data, ...prev]);
+    setShowForm(false);
+    setForm({ code: "", discount_type: "percent", discount_value: 10, usage_limit: 100 });
+  };
+
+  const toggleCoupon = async (id: string, active: boolean) => {
+    await supabase.from("coupons").update({ active: !active }).eq("id", id);
+    setCoupons(prev => prev.map(c => c.id === id ? { ...c, active: !active } : c));
+  };
+
+  const deleteCoupon = async (id: string) => {
+    await supabase.from("coupons").delete().eq("id", id);
+    setCoupons(prev => prev.filter(c => c.id !== id));
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="font-heading text-xl">Cupons</h2>
+        <button onClick={() => setShowForm(!showForm)} className="btn-gold text-xs py-2 px-3 flex items-center gap-1"><Plus className="w-3 h-3" /> Novo Cupom</button>
+      </div>
+
+      {showForm && (
+        <div className="bg-card rounded-xl p-5 shadow-sm mb-6 space-y-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <input value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value }))} placeholder="Código (ex: ALBA10)" className="px-3 py-2 rounded-lg bg-muted text-sm font-body border border-border" />
+            <select value={form.discount_type} onChange={e => setForm(f => ({ ...f, discount_type: e.target.value }))} className="px-3 py-2 rounded-lg bg-muted text-sm font-body border border-border">
+              <option value="percent">Porcentagem (%)</option>
+              <option value="fixed">Valor fixo (R$)</option>
+            </select>
+            <input type="number" value={form.discount_value} onChange={e => setForm(f => ({ ...f, discount_value: Number(e.target.value) }))} placeholder="Valor" className="px-3 py-2 rounded-lg bg-muted text-sm font-body border border-border" />
+            <input type="number" value={form.usage_limit} onChange={e => setForm(f => ({ ...f, usage_limit: Number(e.target.value) }))} placeholder="Limite de uso" className="px-3 py-2 rounded-lg bg-muted text-sm font-body border border-border" />
+          </div>
+          <button onClick={createCoupon} className="btn-gold text-xs py-2 px-4">Criar Cupom</button>
+        </div>
+      )}
+
+      <div className="bg-card rounded-xl shadow-sm overflow-hidden">
+        <table className="w-full text-sm font-body">
+          <thead><tr className="border-b border-border bg-muted/50"><th className="text-left p-3">Código</th><th className="text-center p-3">Desconto</th><th className="text-center p-3">Uso</th><th className="text-center p-3">Status</th><th className="text-center p-3">Ações</th></tr></thead>
+          <tbody>
+            {coupons.map(c => (
+              <tr key={c.id} className="border-b border-border/50">
+                <td className="p-3 font-mono font-bold">{c.code}</td>
+                <td className="p-3 text-center">{c.discount_type === "percent" ? `${c.discount_value}%` : formatPrice(Number(c.discount_value))}</td>
+                <td className="p-3 text-center">{c.usage_count ?? 0}/{c.usage_limit ?? "∞"}</td>
+                <td className="p-3 text-center">
+                  <button onClick={() => toggleCoupon(c.id, c.active)} className={`px-2 py-0.5 rounded text-xs ${c.active ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"}`}>
+                    {c.active ? "Ativo" : "Inativo"}
+                  </button>
+                </td>
+                <td className="p-3 text-center">
+                  <button onClick={() => deleteCoupon(c.id)} className="p-1.5 hover:bg-sale/10 rounded text-sale"><Trash2 className="w-4 h-4" /></button>
+                </td>
+              </tr>
+            ))}
+            {coupons.length === 0 && <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">Nenhum cupom criado</td></tr>}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
