@@ -7,13 +7,11 @@ import logo from "@/assets/logo.png";
 
 const navLinks = [
   { label: "Início", to: "/" },
-  { label: "Feminino", to: "/produtos", search: "?cat=feminino" },
-  { label: "Masculino", to: "/produtos", search: "?cat=masculino" },
-  { label: "Infantil", to: "/produtos", search: "?cat=infantil" },
-  { label: "Calçados", to: "/produtos", search: "?cat=calcados" },
-  { label: "Perfumes & Hidratantes", to: "/produtos", search: "?cat=perfumes" },
-  { label: "Acessórios", to: "/produtos", search: "?cat=acessorios" },
-  { label: "Promoções", to: "/produtos", search: "?promo=true" },
+  { label: "Feminino", to: "/produtos" },
+  { label: "Masculino", to: "/produtos" },
+  { label: "Infantil", to: "/produtos" },
+  { label: "Acessórios", to: "/produtos" },
+  { label: "Promoções", to: "/produtos", isPromo: true },
 ];
 
 function AnnouncementBar() {
@@ -28,24 +26,29 @@ function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const { totalItems, setIsOpen } = useCart();
+  const location = useLocation();
 
   return (
-    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
-      <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-16 md:h-20">
-        <button className="md:hidden" onClick={() => setMobileOpen(true)} aria-label="Menu">
-          <Menu className="w-6 h-6" />
-        </button>
+    <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border">
+      <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <button className="lg:hidden" onClick={() => setMobileOpen(true)} aria-label="Menu">
+            <Menu className="w-[22px] h-[22px]" />
+          </button>
+          <Link to="/" className="flex items-center gap-2">
+            <img src={logo} alt="Alba Modas e Acessórios" className="h-12 md:h-14 w-auto object-contain" />
+          </Link>
+        </div>
 
-        <Link to="/" className="flex items-center gap-2">
-          <img src={logo} alt="Alba Modas" className="h-10 md:h-14 w-auto" />
-        </Link>
-
-        <nav className="hidden md:flex items-center gap-6">
+        <nav className="hidden lg:flex items-center gap-8 text-sm font-medium">
           {navLinks.map(l => (
             <Link
               key={l.label}
               to={l.to as "/"}
-              className="text-sm font-body text-foreground/80 hover:text-foreground transition-colors whitespace-nowrap"
+              className={`hover:text-gold transition-colors ${
+                l.isPromo ? "text-sale font-semibold" :
+                location.pathname === l.to ? "text-gold" : ""
+              }`}
             >
               {l.label}
             </Link>
@@ -53,16 +56,16 @@ function Header() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <button onClick={() => setSearchOpen(!searchOpen)} aria-label="Buscar">
+          <button onClick={() => setSearchOpen(!searchOpen)} className="p-2 hover:bg-secondary rounded-full transition-colors" aria-label="Buscar">
             <Search className="w-5 h-5" />
           </button>
-          <Link to="/" className="hidden md:block" aria-label="Favoritos">
+          <Link to="/" className="p-2 hover:bg-secondary rounded-full transition-colors hidden sm:block" aria-label="Favoritos">
             <Heart className="w-5 h-5" />
           </Link>
-          <button className="relative" onClick={() => setIsOpen(true)} aria-label="Carrinho">
+          <button className="p-2 hover:bg-secondary rounded-full transition-colors relative" onClick={() => setIsOpen(true)} aria-label="Carrinho">
             <ShoppingBag className="w-5 h-5" />
             {totalItems > 0 && (
-              <span className="absolute -top-2 -right-2 bg-gold text-gold-foreground text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">
+              <span className="absolute -top-1 -right-1 bg-gold text-gold-foreground text-[10px] w-4.5 h-4.5 rounded-full flex items-center justify-center font-bold">
                 {totalItems}
               </span>
             )}
@@ -87,7 +90,7 @@ function Header() {
       {mobileOpen && (
         <div className="fixed inset-0 z-50 bg-background flex flex-col">
           <div className="flex items-center justify-between p-4 border-b border-border">
-            <img src={logo} alt="Alba Modas" className="h-10" />
+            <img src={logo} alt="Alba Modas" className="h-10 object-contain" />
             <button onClick={() => setMobileOpen(false)}><X className="w-6 h-6" /></button>
           </div>
           <nav className="flex-1 overflow-y-auto p-4 space-y-1">
@@ -96,7 +99,7 @@ function Header() {
                 key={l.label}
                 to={l.to as "/"}
                 onClick={() => setMobileOpen(false)}
-                className="flex items-center justify-between py-3 px-2 text-lg font-body border-b border-border/50"
+                className={`flex items-center justify-between py-3 px-2 text-lg font-body border-b border-border/50 ${l.isPromo ? "text-sale font-semibold" : ""}`}
               >
                 {l.label}
                 <ChevronRight className="w-4 h-4 text-muted-foreground" />
@@ -149,7 +152,7 @@ function MobileBottomNav() {
   const location = useLocation();
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-background border-t border-border">
+    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-background border-t border-border">
       <div className="flex items-center justify-around py-2">
         <Link to="/" className={`flex flex-col items-center gap-0.5 text-xs font-body ${location.pathname === "/" ? "text-gold" : "text-muted-foreground"}`}>
           <Home className="w-5 h-5" />
@@ -182,7 +185,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <>
       <AnnouncementBar />
       <Header />
-      <main className="pb-16 md:pb-0">{children}</main>
+      <main className="pb-16 lg:pb-0">{children}</main>
       <Footer />
       <MobileBottomNav />
     </>

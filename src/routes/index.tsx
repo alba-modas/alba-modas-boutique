@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Star, ChevronRight, Truck, RefreshCw, MessageCircle, Shield } from "lucide-react";
+import { Star, ChevronRight, Truck, RotateCcw, MessageCircle, ShieldCheck, ArrowRight } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
 import {
   categories, novidades, bestSellers, testimonials, outfitCombos,
   formatPrice, INSTAGRAM,
 } from "@/data/products";
+import heroBanner from "@/assets/hero-banner.jpg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -34,27 +35,31 @@ function HomePage() {
 
 function HeroSection() {
   return (
-    <section className="relative h-[70vh] md:h-[85vh] overflow-hidden">
-      <img
-        src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1920&q=80"
-        alt="Moda evangélica elegante"
-        className="absolute inset-0 w-full h-full object-cover"
-      />
-      <div className="absolute inset-0 bg-gradient-to-r from-foreground/60 via-foreground/30 to-transparent" />
-      <div className="relative z-10 h-full flex items-center">
-        <div className="max-w-7xl mx-auto px-4 w-full">
-          <div className="max-w-lg">
-            <h1 className="font-heading text-4xl md:text-6xl text-background leading-tight">
-              Vista-se com Graça e Elegância
-            </h1>
-            <p className="font-body text-background/80 mt-4 text-sm md:text-base leading-relaxed">
-              Moda feminina, masculina, infantil, calçados, perfumes e acessórios para toda a família
-            </p>
-            <div className="flex flex-wrap gap-3 mt-8">
-              <Link to="/produtos" className="btn-gold">Explorar Coleção</Link>
-              <Link to="/quem-somos" className="btn-outline-dark !border-background/60 !text-background hover:!bg-background/10">
-                Conheça Nossa História
-              </Link>
+    <section className="relative overflow-hidden">
+      <div className="relative h-[70vh] min-h-[500px] max-h-[700px]">
+        <img
+          src={heroBanner}
+          alt="Alba Modas - Moda Evangélica"
+          className="absolute inset-0 w-full h-full object-cover"
+          width={1920}
+          height={900}
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-foreground/60 via-foreground/30 to-transparent" />
+        <div className="relative z-10 h-full flex items-center">
+          <div className="max-w-7xl mx-auto px-4 w-full">
+            <div className="max-w-lg">
+              <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl font-bold text-primary-foreground leading-tight">
+                Vista-se com Graça e Elegância
+              </h1>
+              <p className="mt-4 text-primary-foreground/80 text-lg font-body">
+                Moda feminina, masculina e infantil para toda a família
+              </p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link to="/produtos" className="btn-gold">Explorar Coleção</Link>
+                <Link to="/quem-somos" className="btn-outline-dark !border-primary-foreground !text-primary-foreground hover:!bg-primary-foreground/20">
+                  Conheça Nossa História
+                </Link>
+              </div>
             </div>
           </div>
         </div>
@@ -65,17 +70,17 @@ function HeroSection() {
 
 function TrustBar() {
   const items = [
-    { icon: <Truck className="w-5 h-5" />, text: "Entrega Rápida" },
-    { icon: <RefreshCw className="w-5 h-5" />, text: "Troca Garantida" },
-    { icon: <MessageCircle className="w-5 h-5" />, text: "Atendimento no WhatsApp" },
-    { icon: <Shield className="w-5 h-5" />, text: "Compra Segura" },
+    { icon: <Truck className="w-6 h-6 text-gold" />, text: "Entrega Rápida" },
+    { icon: <RotateCcw className="w-6 h-6 text-gold" />, text: "Troca Garantida" },
+    { icon: <MessageCircle className="w-6 h-6 text-gold" />, text: "Atendimento WhatsApp" },
+    { icon: <ShieldCheck className="w-6 h-6 text-gold" />, text: "Compra Segura" },
   ];
   return (
-    <section className="border-b border-border py-6 bg-card">
+    <section className="border-b border-border py-6 bg-background">
       <div className="max-w-7xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-4">
         {items.map(i => (
           <div key={i.text} className="flex items-center gap-3 justify-center">
-            <span className="text-gold">{i.icon}</span>
+            {i.icon}
             <span className="font-body text-sm font-medium">{i.text}</span>
           </div>
         ))}
@@ -86,23 +91,20 @@ function TrustBar() {
 
 function CategoriesGrid() {
   return (
-    <section className="max-w-7xl mx-auto px-4 py-16">
-      <div className="text-center mb-10">
-        <h2 className="font-heading text-2xl md:text-3xl">Categorias</h2>
-        <p className="font-body text-sm text-muted-foreground mt-2">Encontre o que você procura</p>
-      </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+    <section className="py-16 max-w-7xl mx-auto px-4">
+      <h2 className="font-heading text-2xl md:text-3xl text-center mb-8">Explore por Categoria</h2>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         {categories.map(cat => (
           <Link
             to="/produtos"
             key={cat.slug}
-            className="group relative aspect-[4/3] rounded-xl overflow-hidden"
+            className="group block relative overflow-hidden rounded-xl aspect-[3/4]"
           >
-            <img src={cat.image} alt={cat.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
-            <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 to-transparent" />
+            <img src={cat.image} alt={cat.name} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" width={300} height={400} />
+            <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 to-transparent" />
             <div className="absolute bottom-4 left-4">
               <span className="text-2xl">{cat.emoji}</span>
-              <h3 className="font-heading text-lg text-background mt-1">{cat.name}</h3>
+              <h3 className="text-primary-foreground font-heading text-xl font-semibold">{cat.name}</h3>
             </div>
           </Link>
         ))}
@@ -113,24 +115,24 @@ function CategoriesGrid() {
 
 function ProductSection({ title, products, scrollable = false }: { title: string; products: typeof novidades; scrollable?: boolean }) {
   return (
-    <section className="py-16 bg-card">
+    <section className="py-16 bg-secondary/30">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between mb-8">
           <h2 className="font-heading text-2xl md:text-3xl">{title}</h2>
-          <Link to="/produtos" className="font-body text-sm text-gold flex items-center gap-1 hover:underline">
-            Ver todos <ChevronRight className="w-4 h-4" />
+          <Link to="/produtos" className="text-sm font-medium text-gold flex items-center gap-1 hover:gap-2 transition-all">
+            Ver Todas <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
         {scrollable ? (
-          <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-4 -mx-4 px-4">
+          <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory hide-scrollbar">
             {products.map(p => (
-              <div key={p.id} className="min-w-[200px] md:min-w-[240px] flex-shrink-0">
+              <div key={p.id} className="min-w-[180px] sm:min-w-[220px] snap-start flex-shrink-0">
                 <ProductCard product={p} />
               </div>
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {products.map(p => <ProductCard key={p.id} product={p} />)}
           </div>
         )}
@@ -145,11 +147,11 @@ function BestSellers() {
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between mb-8">
           <h2 className="font-heading text-2xl md:text-3xl">Mais Vendidos</h2>
-          <Link to="/produtos" className="font-body text-sm text-gold flex items-center gap-1 hover:underline">
-            Ver todos <ChevronRight className="w-4 h-4" />
+          <Link to="/produtos" className="text-sm font-medium text-gold flex items-center gap-1 hover:gap-2 transition-all">
+            Ver Todos <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {bestSellers.map(p => <ProductCard key={p.id} product={p} />)}
         </div>
       </div>
@@ -159,7 +161,7 @@ function BestSellers() {
 
 function MonteSeuLook() {
   return (
-    <section className="py-16 bg-secondary/50">
+    <section className="py-16 bg-secondary/30">
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-10">
           <h2 className="font-heading text-2xl md:text-3xl">Monte seu Look</h2>
@@ -227,7 +229,7 @@ function Testimonials() {
 
 function QuemSomosPreview() {
   return (
-    <section className="py-16 bg-secondary/50">
+    <section className="py-16 bg-secondary/30">
       <div className="max-w-7xl mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           <div>
