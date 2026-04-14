@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link } from "react-router-dom";
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -7,16 +7,9 @@ import {
 } from "lucide-react";
 import { formatPrice } from "@/data/products";
 
-export const Route = createFileRoute("/admin")({
-  head: () => ({
-    meta: [{ title: "Admin — Alba Modas" }],
-  }),
-  component: AdminPage,
-});
-
 type Tab = "dashboard" | "produtos" | "pedidos" | "estoque" | "leads" | "cupons";
 
-function AdminPage() {
+export default function AdminPage() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>("dashboard");
@@ -55,7 +48,6 @@ function AdminPage() {
       setError(error.message);
     } else {
       setSuccess("Conta criada com sucesso! Fazendo login...");
-      // Auto-login after signup
       setTimeout(async () => {
         await supabase.auth.signInWithPassword({ email, password });
       }, 1000);
@@ -193,7 +185,6 @@ function DashboardTab() {
   );
 }
 
-// Product form type
 interface ProductForm {
   name: string;
   slug: string;

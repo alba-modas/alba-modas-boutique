@@ -1,20 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link } from "react-router-dom";
 import { useCart } from "@/hooks/useCart";
 import { formatPrice, WHATSAPP } from "@/data/products";
 import { Minus, Plus, Trash2, Truck, Store } from "lucide-react";
 import { useState } from "react";
 
-export const Route = createFileRoute("/carrinho")({
-  head: () => ({
-    meta: [
-      { title: "Carrinho — Alba Modas e Acessórios" },
-      { name: "description", content: "Revise seu pedido e finalize pelo WhatsApp." },
-    ],
-  }),
-  component: CarrinhoPage,
-});
-
-function CarrinhoPage() {
+export default function CarrinhoPage() {
   const { items, removeItem, updateQty, subtotal, clearCart } = useCart();
   const [coupon, setCoupon] = useState("");
   const [discount, setDiscount] = useState(0);
@@ -95,12 +85,10 @@ function CarrinhoPage() {
         <div className="space-y-6">
           <div className="bg-card rounded-xl p-6 shadow-sm space-y-4">
             <h3 className="font-heading text-lg">Resumo do Pedido</h3>
-
             <div className="flex gap-2">
               <input value={coupon} onChange={e => setCoupon(e.target.value)} placeholder="Cupom de desconto" className="flex-1 px-3 py-2 text-sm font-body rounded-lg bg-muted focus:outline-none focus:ring-2 focus:ring-gold" />
               <button onClick={applyCoupon} className="btn-gold text-xs px-4">Aplicar</button>
             </div>
-
             <div className="space-y-2 text-sm font-body">
               <div className="flex justify-between"><span>Subtotal</span><span>{formatPrice(subtotal)}</span></div>
               {discount > 0 && <div className="flex justify-between text-sale"><span>Desconto</span><span>-{formatPrice(discount)}</span></div>}
@@ -132,9 +120,7 @@ function CarrinhoPage() {
 
             {delivery === "entrega" && (
               <div className="space-y-3">
-                <div>
-                  <input value={cep} onChange={e => setCep(e.target.value)} onBlur={lookupCep} placeholder="CEP" className="w-full px-3 py-2 text-sm font-body rounded-lg bg-muted focus:outline-none focus:ring-2 focus:ring-gold" />
-                </div>
+                <input value={cep} onChange={e => setCep(e.target.value)} onBlur={lookupCep} placeholder="CEP" className="w-full px-3 py-2 text-sm font-body rounded-lg bg-muted focus:outline-none focus:ring-2 focus:ring-gold" />
                 <input value={address} onChange={e => setAddress(e.target.value)} placeholder="Endereço" className="w-full px-3 py-2 text-sm font-body rounded-lg bg-muted focus:outline-none focus:ring-2 focus:ring-gold" />
                 <input value={neighborhood} onChange={e => setNeighborhood(e.target.value)} placeholder="Bairro" className="w-full px-3 py-2 text-sm font-body rounded-lg bg-muted focus:outline-none focus:ring-2 focus:ring-gold" />
               </div>

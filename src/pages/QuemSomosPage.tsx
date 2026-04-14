@@ -1,19 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Heart, Cross } from "lucide-react";
+import { Link } from "react-router-dom";
 
-export const Route = createFileRoute("/quem-somos")({
-  head: () => ({
-    meta: [
-      { title: "Quem Somos — Alba Modas e Acessórios" },
-      { name: "description", content: "Conheça a história da Alba Modas e Acessórios. Moda evangélica com fé, qualidade e elegância." },
-      { property: "og:title", content: "Quem Somos — Alba Modas e Acessórios" },
-      { property: "og:description", content: "Conheça a história da Alba Modas e Acessórios." },
-    ],
-  }),
-  component: QuemSomosPage,
-});
-
-function QuemSomosPage() {
+export default function QuemSomosPage() {
   const values = [
     { emoji: "✝️", title: "Fé", text: "Nossa fé nos guia em tudo o que fazemos." },
     { emoji: "⭐", title: "Qualidade", text: "Peças selecionadas com carinho e atenção." },

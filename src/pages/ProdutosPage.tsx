@@ -1,22 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link } from "react-router-dom";
 import ProductCard from "@/components/ProductCard";
 import { allProducts, categories } from "@/data/products";
 import { useState } from "react";
 import { SlidersHorizontal, ChevronRight } from "lucide-react";
 
-export const Route = createFileRoute("/produtos")({
-  head: () => ({
-    meta: [
-      { title: "Produtos — Alba Modas e Acessórios" },
-      { name: "description", content: "Explore nossa coleção de moda evangélica: feminino, masculino, infantil, calçados, perfumes e acessórios." },
-      { property: "og:title", content: "Produtos — Alba Modas e Acessórios" },
-      { property: "og:description", content: "Moda evangélica com elegância e fé para toda a família." },
-    ],
-  }),
-  component: ProdutosPage,
-});
-
-function ProdutosPage() {
+export default function ProdutosPage() {
   const [selectedCat, setSelectedCat] = useState<string | null>(null);
   const [sort, setSort] = useState("recent");
   const [showFilters, setShowFilters] = useState(false);

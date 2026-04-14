@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link } from "react-router-dom";
 import { Star, ChevronRight, Truck, RotateCcw, MessageCircle, ShieldCheck, ArrowRight, Plus, Check } from "lucide-react";
 import { useState } from "react";
 import ProductCard from "@/components/ProductCard";
@@ -8,17 +8,7 @@ import {
 } from "@/data/products";
 import heroBanner from "@/assets/hero-banner.jpg";
 
-export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "Alba Modas e Acessórios — Moda Evangélica com Elegância e Fé" },
-      { name: "description", content: "Moda evangélica feminina, masculina, infantil, calçados, perfumes e acessórios. Frete grátis. Vista-se com graça e elegância." },
-    ],
-  }),
-  component: HomePage,
-});
-
-function HomePage() {
+export default function HomePage() {
   return (
     <>
       <HeroSection />

@@ -1,33 +1,12 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link, useParams } from "react-router-dom";
 import { allProducts, formatPrice, WHATSAPP } from "@/data/products";
 import { useCart } from "@/hooks/useCart";
 import { useState } from "react";
 import { ChevronRight, Minus, Plus, Share2, Star, Truck } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
 
-export const Route = createFileRoute("/produto/$slug")({
-  head: ({ params }) => {
-    const product = allProducts.find(p => p.slug === params.slug);
-    return {
-      meta: [
-        { title: product ? `${product.name} — Alba Modas` : "Produto — Alba Modas" },
-        { name: "description", content: product?.description ?? "Moda evangélica com elegância e fé." },
-        { property: "og:title", content: product?.name ?? "Produto" },
-        { property: "og:image", content: product?.image ?? "" },
-      ],
-    };
-  },
-  component: ProductDetailPage,
-  notFoundComponent: () => (
-    <div className="text-center py-20">
-      <h2 className="font-heading text-2xl">Produto não encontrado</h2>
-      <Link to="/produtos" className="btn-gold mt-6 inline-flex">Ver todos os produtos</Link>
-    </div>
-  ),
-});
-
-function ProductDetailPage() {
-  const { slug } = Route.useParams();
+export default function ProductDetailPage() {
+  const { slug } = useParams<{ slug: string }>();
   const product = allProducts.find(p => p.slug === slug);
   const { addItem } = useCart();
   const [selectedSize, setSelectedSize] = useState<string | undefined>(undefined);
