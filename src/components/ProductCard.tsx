@@ -2,7 +2,7 @@ import { Heart, Share2 } from "lucide-react";
 import type { Product } from "@/data/products";
 import { formatPrice, WHATSAPP } from "@/data/products";
 import { useCart } from "@/hooks/useCart";
-import { Link } from "@tanstack/react-router";
+import { Link } from "react-router-dom";
 
 export default function ProductCard({ product, className = "", compact = false }: { product: Product; className?: string; compact?: boolean }) {
   const { addItem } = useCart();
@@ -17,7 +17,7 @@ export default function ProductCard({ product, className = "", compact = false }
 
   return (
     <div className={`group relative ${className}`}>
-      <Link to="/produto/$slug" params={{ slug: product.slug }} className="block">
+      <Link to={`/produto/${product.slug}`} className="block">
         <div className="relative overflow-hidden rounded-lg bg-secondary">
           <img
             src={product.image}

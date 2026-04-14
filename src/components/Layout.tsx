@@ -1,4 +1,4 @@
-import { Link, useLocation } from "@tanstack/react-router";
+import { Link, useLocation } from "react-router-dom";
 import { Search, Heart, ShoppingBag, Menu, X, Home, Grid3X3, ChevronRight } from "lucide-react";
 import { useState, useCallback } from "react";
 import { useCart } from "@/hooks/useCart";
@@ -58,7 +58,7 @@ function Header() {
             {navLinks.map(l => (
               <Link
                 key={l.label}
-                to={l.to as "/"}
+                to={l.to}
                 className={`hover:text-gold transition-colors ${
                   l.isPromo ? "text-sale font-semibold" :
                   location.pathname === l.to ? "text-gold" : ""
@@ -114,7 +114,7 @@ function Header() {
             {navLinks.map(l => (
               <Link
                 key={l.label}
-                to={l.to as "/"}
+                to={l.to}
                 onClick={closeMenu}
                 className={`flex items-center justify-between py-3 px-2 text-lg font-body border-b border-border/50 ${l.isPromo ? "text-sale font-semibold" : ""}`}
               >

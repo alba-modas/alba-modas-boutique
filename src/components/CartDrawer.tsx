@@ -1,7 +1,7 @@
 import { X, Plus, Minus, ShoppingBag } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import { formatPrice } from "@/data/products";
-import { Link } from "@tanstack/react-router";
+import { Link } from "react-router-dom";
 
 export default function CartDrawer() {
   const { items, removeItem, updateQty, subtotal, totalItems, isOpen, setIsOpen } = useCart();
