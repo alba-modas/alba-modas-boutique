@@ -1,6 +1,10 @@
 [build]
-  command = "bun run build"
+  command = "npm run build -- --legacy-peer-deps"
   publish = "dist/client"
+
+[build.environment]
+  NODE_VERSION = "22"
+  NPM_FLAGS = "--legacy-peer-deps"
 
 [[redirects]]
   from = "/*"
