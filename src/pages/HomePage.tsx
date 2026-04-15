@@ -14,7 +14,7 @@ export default function HomePage() {
 
   return (
     <>
-      <HeroSection heroText={settings.heroText} heroSubtext={settings.heroSubtext} />
+      <HeroSection heroText={settings.heroText} heroSubtext={settings.heroSubtext} heroImage={settings.heroImage} />
       <TrustBar />
       <CategoriesGrid />
       {!loading && novidades.length > 0 && settings.sectionsVisible.novidades && <ProductSection title="Novidades" products={novidades} scrollable />}
@@ -26,11 +26,12 @@ export default function HomePage() {
   );
 }
 
-function HeroSection({ heroText, heroSubtext }: { heroText: string; heroSubtext: string }) {
+function HeroSection({ heroText, heroSubtext, heroImage }: { heroText: string; heroSubtext: string; heroImage: string }) {
+  const bannerSrc = heroImage || heroBanner;
   return (
     <section className="relative overflow-hidden">
       <div className="relative h-[70vh] min-h-[500px] max-h-[700px]">
-        <img src={heroBanner} alt="Alba Modas - Moda Evangélica" className="absolute inset-0 w-full h-full object-cover" width={1920} height={900} />
+        <img src={bannerSrc} alt="Alba Modas - Moda Evangélica" className="absolute inset-0 w-full h-full object-cover" width={1920} height={900} />
         <div className="absolute inset-0 bg-gradient-to-r from-foreground/60 via-foreground/30 to-transparent" />
         <div className="relative z-10 h-full flex items-center">
           <div className="max-w-7xl mx-auto px-4 w-full">
