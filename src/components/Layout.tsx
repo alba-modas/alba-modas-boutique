@@ -52,7 +52,7 @@ function Header() {
               <Menu className="w-6 h-6" />
             </button>
             <a href="/" onClick={handleLogoClick} className="flex items-center gap-2">
-              <img src={logo} alt="Alba Modas e Acessórios" className="h-16 md:h-20 w-auto object-contain" />
+              <img src={logo} alt="Alba Modas e Acessórios" className="h-20 md:h-28 w-auto object-contain" />
             </a>
           </div>
 
