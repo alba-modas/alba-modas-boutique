@@ -1,15 +1,23 @@
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import ProductCard from "@/components/ProductCard";
-import { allProducts, categories } from "@/data/products";
-import { useState } from "react";
+import { categories } from "@/data/products";
+import { useProducts } from "@/hooks/useProducts";
+import { useState, useEffect } from "react";
 import { SlidersHorizontal, ChevronRight } from "lucide-react";
 
 export default function ProdutosPage() {
-  const [selectedCat, setSelectedCat] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+  const catFromUrl = searchParams.get("categoria");
+  const [selectedCat, setSelectedCat] = useState<string | null>(catFromUrl);
   const [sort, setSort] = useState("recent");
   const [showFilters, setShowFilters] = useState(false);
+  const { products, loading } = useProducts();
 
-  let filtered = selectedCat ? allProducts.filter(p => p.category === selectedCat) : allProducts;
+  useEffect(() => {
+    setSelectedCat(catFromUrl);
+  }, [catFromUrl]);
+
+  let filtered = selectedCat ? products.filter(p => p.category === selectedCat) : products;
 
   if (sort === "price-asc") filtered = [...filtered].sort((a, b) => (a.salePrice ?? a.price) - (b.salePrice ?? b.price));
   else if (sort === "price-desc") filtered = [...filtered].sort((a, b) => (b.salePrice ?? b.price) - (a.salePrice ?? a.price));
@@ -25,7 +33,7 @@ export default function ProdutosPage() {
           {selectedCat && (
             <>
               <ChevronRight className="w-3 h-3" />
-              <span className="text-foreground capitalize">{selectedCat}</span>
+              <span className="text-foreground capitalize">{categories.find(c => c.slug === selectedCat)?.name ?? selectedCat}</span>
             </>
           )}
         </div>
@@ -40,11 +48,7 @@ export default function ProdutosPage() {
             <button onClick={() => setShowFilters(!showFilters)} className="md:hidden flex items-center gap-1 text-sm font-body border border-border rounded-lg px-3 py-2">
               <SlidersHorizontal className="w-4 h-4" /> Filtros
             </button>
-            <select
-              value={sort}
-              onChange={e => setSort(e.target.value)}
-              className="text-sm font-body border border-border rounded-lg px-3 py-2 bg-background"
-            >
+            <select value={sort} onChange={e => setSort(e.target.value)} className="text-sm font-body border border-border rounded-lg px-3 py-2 bg-background">
               <option value="recent">Mais Recentes</option>
               <option value="price-asc">Menor Preço</option>
               <option value="price-desc">Maior Preço</option>
@@ -84,14 +88,28 @@ export default function ProdutosPage() {
           </aside>
 
           <div className="flex-1">
-            <p className="font-body text-sm text-muted-foreground mb-4">{filtered.length} produtos encontrados</p>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-              {filtered.map(p => <ProductCard key={p.id} product={p} />)}
-            </div>
-            {filtered.length === 0 && (
-              <div className="text-center py-20">
-                <p className="font-body text-muted-foreground">Nenhum produto encontrado nesta categoria.</p>
+            {loading ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="animate-pulse">
+                    <div className="bg-muted rounded-lg aspect-[3/4]" />
+                    <div className="mt-3 h-4 bg-muted rounded w-3/4" />
+                    <div className="mt-2 h-3 bg-muted rounded w-1/2" />
+                  </div>
+                ))}
               </div>
+            ) : (
+              <>
+                <p className="font-body text-sm text-muted-foreground mb-4">{filtered.length} produtos encontrados</p>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+                  {filtered.map(p => <ProductCard key={p.id} product={p} />)}
+                </div>
+                {filtered.length === 0 && (
+                  <div className="text-center py-20">
+                    <p className="font-body text-muted-foreground">Nenhum produto encontrado nesta categoria.</p>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

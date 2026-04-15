@@ -1,22 +1,22 @@
 import { Link } from "react-router-dom";
-import { Star, ChevronRight, Truck, RotateCcw, MessageCircle, ShieldCheck, ArrowRight, Plus, Check } from "lucide-react";
-import { useState } from "react";
+import { Star, Truck, RotateCcw, MessageCircle, ShieldCheck, ArrowRight } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
-import {
-  categories, novidades, bestSellers, testimonials, outfitCombos, allProducts,
-  formatPrice, INSTAGRAM,
-} from "@/data/products";
+import { categories, testimonials, formatPrice, INSTAGRAM } from "@/data/products";
+import { useProducts } from "@/hooks/useProducts";
 import heroBanner from "@/assets/hero-banner.jpg";
 
 export default function HomePage() {
+  const { products, loading } = useProducts();
+  const novidades = products.filter(p => p.badge === "novo").slice(0, 8);
+  const bestSellers = products.filter(p => p.badge === "bestseller").slice(0, 6);
+
   return (
     <>
       <HeroSection />
       <TrustBar />
       <CategoriesGrid />
-      <ProductSection title="Novidades" products={novidades} scrollable />
-      <BestSellers />
-      <MonteSeuLook />
+      {!loading && novidades.length > 0 && <ProductSection title="Novidades" products={novidades} scrollable />}
+      {!loading && bestSellers.length > 0 && <BestSellers products={bestSellers} />}
       <Testimonials />
       <QuemSomosPreview />
       <InstagramGrid />
@@ -28,13 +28,7 @@ function HeroSection() {
   return (
     <section className="relative overflow-hidden">
       <div className="relative h-[70vh] min-h-[500px] max-h-[700px]">
-        <img
-          src={heroBanner}
-          alt="Alba Modas - Moda Evangélica"
-          className="absolute inset-0 w-full h-full object-cover"
-          width={1920}
-          height={900}
-        />
+        <img src={heroBanner} alt="Alba Modas - Moda Evangélica" className="absolute inset-0 w-full h-full object-cover" width={1920} height={900} />
         <div className="absolute inset-0 bg-gradient-to-r from-foreground/60 via-foreground/30 to-transparent" />
         <div className="relative z-10 h-full flex items-center">
           <div className="max-w-7xl mx-auto px-4 w-full">
@@ -87,7 +81,7 @@ function CategoriesGrid() {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         {categories.map(cat => (
           <Link
-            to="/produtos"
+            to={`/produtos?categoria=${cat.slug}`}
             key={cat.slug}
             className="group block relative overflow-hidden rounded-xl aspect-[3/4]"
           >
@@ -104,7 +98,7 @@ function CategoriesGrid() {
   );
 }
 
-function ProductSection({ title, products, scrollable = false }: { title: string; products: typeof novidades; scrollable?: boolean }) {
+function ProductSection({ title, products, scrollable = false }: { title: string; products: any[]; scrollable?: boolean }) {
   return (
     <section className="py-12 bg-secondary/30">
       <div className="max-w-7xl mx-auto px-4">
@@ -132,7 +126,7 @@ function ProductSection({ title, products, scrollable = false }: { title: string
   );
 }
 
-function BestSellers() {
+function BestSellers({ products }: { products: any[] }) {
   return (
     <section className="py-12">
       <div className="max-w-7xl mx-auto px-4">
@@ -143,113 +137,8 @@ function BestSellers() {
           </Link>
         </div>
         <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-          {bestSellers.map(p => <ProductCard key={p.id} product={p} compact />)}
+          {products.map(p => <ProductCard key={p.id} product={p} compact />)}
         </div>
-      </div>
-    </section>
-  );
-}
-
-function MonteSeuLook() {
-  const [mode, setMode] = useState<"pronto" | "livre">("pronto");
-  const [selectedProducts, setSelectedProducts] = useState<typeof allProducts>([]);
-
-  const toggleProduct = (product: typeof allProducts[0]) => {
-    setSelectedProducts(prev => {
-      const exists = prev.find(p => p.id === product.id);
-      if (exists) return prev.filter(p => p.id !== product.id);
-      if (prev.length >= 5) return prev;
-      return [...prev, product];
-    });
-  };
-
-  const selectedTotal = selectedProducts.reduce((s, p) => s + (p.salePrice ?? p.price), 0);
-
-  return (
-    <section className="py-12 bg-secondary/30">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="text-center mb-8">
-          <h2 className="font-heading text-2xl md:text-3xl">Monte seu Look</h2>
-          <p className="font-body text-sm text-muted-foreground mt-2">Escolha combinações prontas ou monte o seu look do seu jeito</p>
-          <div className="flex justify-center gap-2 mt-4">
-            <button onClick={() => setMode("pronto")} className={`px-4 py-2 rounded-lg text-sm font-body font-medium transition-colors ${mode === "pronto" ? "bg-gold text-gold-foreground" : "bg-card border border-border"}`}>
-              Looks Prontos
-            </button>
-            <button onClick={() => setMode("livre")} className={`px-4 py-2 rounded-lg text-sm font-body font-medium transition-colors ${mode === "livre" ? "bg-gold text-gold-foreground" : "bg-card border border-border"}`}>
-              Montar Livre
-            </button>
-          </div>
-        </div>
-
-        {mode === "pronto" ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {outfitCombos.map((combo, i) => {
-              const total = combo.products.filter(Boolean).reduce((s, p) => s + (p.salePrice ?? p.price), 0);
-              return (
-                <div key={i} className="bg-card rounded-xl p-5 shadow-sm">
-                  <h3 className="font-heading text-lg mb-3">{combo.title}</h3>
-                  <div className="flex gap-2 mb-3">
-                    {combo.products.filter(Boolean).map(p => (
-                      <img key={p.id} src={p.image} alt={p.name} className="w-1/3 aspect-square object-cover rounded-lg" loading="lazy" />
-                    ))}
-                  </div>
-                  <div className="space-y-1 mb-3">
-                    {combo.products.filter(Boolean).map(p => (
-                      <div key={p.id} className="flex justify-between font-body text-xs">
-                        <span className="truncate mr-2">{p.name}</span>
-                        <span className="font-medium whitespace-nowrap">{formatPrice(p.salePrice ?? p.price)}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex items-center justify-between border-t border-border pt-3">
-                    <span className="font-body text-sm font-bold">Total: {formatPrice(total)}</span>
-                    <button className="btn-gold text-xs py-2 px-4">Ver Look</button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div>
-            {selectedProducts.length > 0 && (
-              <div className="bg-card rounded-xl p-5 shadow-sm mb-6">
-                <h3 className="font-heading text-lg mb-3">Seu Look ({selectedProducts.length} peças)</h3>
-                <div className="flex gap-2 mb-3 overflow-x-auto pb-2">
-                  {selectedProducts.map(p => (
-                    <div key={p.id} className="relative min-w-[80px]">
-                      <img src={p.image} alt={p.name} className="w-20 h-20 object-cover rounded-lg" />
-                      <button onClick={() => toggleProduct(p)} className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-sale text-sale-foreground rounded-full flex items-center justify-center text-xs">×</button>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex items-center justify-between border-t border-border pt-3">
-                  <span className="font-body text-sm font-bold">Total: {formatPrice(selectedTotal)}</span>
-                  <button className="btn-gold text-xs py-2 px-4">Adicionar ao Carrinho</button>
-                </div>
-              </div>
-            )}
-            <p className="font-body text-xs text-muted-foreground mb-3">Selecione até 5 peças para montar seu look:</p>
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
-              {allProducts.map(p => {
-                const isSelected = selectedProducts.some(s => s.id === p.id);
-                return (
-                  <button key={p.id} onClick={() => toggleProduct(p)} className={`relative rounded-lg overflow-hidden border-2 transition-colors ${isSelected ? "border-gold" : "border-transparent"}`}>
-                    <img src={p.image} alt={p.name} className="w-full aspect-square object-cover" loading="lazy" />
-                    {isSelected && (
-                      <div className="absolute top-1 right-1 w-5 h-5 bg-gold rounded-full flex items-center justify-center">
-                        <Check className="w-3 h-3 text-gold-foreground" />
-                      </div>
-                    )}
-                    <div className="p-1.5">
-                      <p className="font-body text-[10px] truncate">{p.name}</p>
-                      <p className="font-body text-[10px] font-bold">{formatPrice(p.salePrice ?? p.price)}</p>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
       </div>
     </section>
   );
