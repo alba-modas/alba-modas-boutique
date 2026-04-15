@@ -11,12 +11,14 @@ function mapDbProduct(p: any): Product {
     salePrice: p.sale_price ? Number(p.sale_price) : undefined,
     image: p.image || "",
     image2: p.image2 || undefined,
+    images: p.images || [],
     category: p.category,
     colors: p.colors || [],
     sizes: p.sizes || [],
     stock: p.stock ?? 0,
     badge: p.badge as Product["badge"],
     description: p.description || undefined,
+    sizeGuide: p.size_guide || undefined,
   };
 }
 

@@ -6,7 +6,6 @@ import { Toaster } from "@/components/ui/sonner";
 import { CartProvider } from "@/hooks/useCart";
 import Layout from "@/components/Layout";
 import CartDrawer from "@/components/CartDrawer";
-import WelcomePopup from "@/components/WelcomePopup";
 import HomePage from "@/pages/HomePage";
 import ProdutosPage from "@/pages/ProdutosPage";
 import CarrinhoPage from "@/pages/CarrinhoPage";
@@ -35,7 +34,6 @@ function App() {
                 </Routes>
               </Layout>
               <CartDrawer />
-              <WelcomePopup />
               <Toaster />
             </CartProvider>
           }
