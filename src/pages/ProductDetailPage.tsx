@@ -3,7 +3,7 @@ import { formatPrice } from "@/data/products";
 import { useCart } from "@/hooks/useCart";
 import { useProductBySlug, useProducts } from "@/hooks/useProducts";
 import { useState } from "react";
-import { ChevronRight, Minus, Plus, Share2, Star, Truck, Copy } from "lucide-react";
+import { ChevronRight, Minus, Plus, Star, Truck, Copy, ChevronLeft } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
 import { toast } from "sonner";
 
@@ -16,6 +16,7 @@ export default function ProductDetailPage() {
   const [selectedColor, setSelectedColor] = useState<string | undefined>(undefined);
   const [qty, setQty] = useState(1);
   const [activeTab, setActiveTab] = useState<"desc" | "sizes" | "policy">("desc");
+  const [activeImg, setActiveImg] = useState(0);
 
   if (loading) {
     return (
@@ -41,6 +42,16 @@ export default function ProductDetailPage() {
     );
   }
 
+  // Build gallery: main image + images array + image2 (deduplicated)
+  const allImages: string[] = [];
+  if (product.image) allImages.push(product.image);
+  if (product.images) {
+    for (const img of product.images) {
+      if (img && !allImages.includes(img)) allImages.push(img);
+    }
+  }
+  if (product.image2 && !allImages.includes(product.image2)) allImages.push(product.image2);
+
   const displayPrice = product.salePrice ?? product.price;
   const related = products.filter(p => p.category === product.category && p.id !== product.id).slice(0, 4);
   const isOutOfStock = product.stock !== undefined && product.stock <= 0;
@@ -61,6 +72,8 @@ export default function ProductDetailPage() {
     }
   };
 
+  const sizeGuide = product.sizeGuide;
+
   return (
     <>
       <div className="max-w-7xl mx-auto px-4 py-4">
@@ -75,11 +88,33 @@ export default function ProductDetailPage() {
 
       <div className="max-w-7xl mx-auto px-4 pb-16">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
-          <div className="aspect-[3/4] rounded-xl overflow-hidden bg-muted relative">
-            <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
-            {isOutOfStock && (
-              <div className="absolute inset-0 bg-foreground/40 flex items-center justify-center">
-                <span className="bg-sale text-destructive-foreground px-6 py-3 rounded-lg font-heading text-xl font-bold">ESGOTADO</span>
+          {/* Image Gallery */}
+          <div>
+            <div className="aspect-[3/4] rounded-xl overflow-hidden bg-muted relative">
+              <img src={allImages[activeImg] || product.image} alt={product.name} className="w-full h-full object-cover" />
+              {isOutOfStock && (
+                <div className="absolute inset-0 bg-foreground/40 flex items-center justify-center">
+                  <span className="bg-sale text-destructive-foreground px-6 py-3 rounded-lg font-heading text-xl font-bold">ESGOTADO</span>
+                </div>
+              )}
+              {allImages.length > 1 && (
+                <>
+                  <button onClick={() => setActiveImg(i => (i - 1 + allImages.length) % allImages.length)} className="absolute left-2 top-1/2 -translate-y-1/2 bg-background/80 rounded-full p-1.5 shadow">
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  <button onClick={() => setActiveImg(i => (i + 1) % allImages.length)} className="absolute right-2 top-1/2 -translate-y-1/2 bg-background/80 rounded-full p-1.5 shadow">
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </>
+              )}
+            </div>
+            {allImages.length > 1 && (
+              <div className="flex gap-2 mt-3 overflow-x-auto">
+                {allImages.map((img, i) => (
+                  <button key={i} onClick={() => setActiveImg(i)} className={`w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 border-2 ${activeImg === i ? "border-gold" : "border-transparent"}`}>
+                    <img src={img} alt="" className="w-full h-full object-cover" />
+                  </button>
+                ))}
               </div>
             )}
           </div>
@@ -183,17 +218,40 @@ export default function ProductDetailPage() {
                 )}
                 {activeTab === "sizes" && (
                   <div>
-                    <p className="mb-2">Consulte nosso guia de tamanhos:</p>
-                    <table className="w-full text-xs border border-border rounded">
-                      <thead><tr className="bg-muted"><th className="p-2 text-left">Tam</th><th className="p-2">Busto</th><th className="p-2">Cintura</th><th className="p-2">Quadril</th></tr></thead>
-                      <tbody>
-                        <tr><td className="p-2 border-t border-border">PP</td><td className="p-2 border-t border-border text-center">82-86</td><td className="p-2 border-t border-border text-center">62-66</td><td className="p-2 border-t border-border text-center">88-92</td></tr>
-                        <tr><td className="p-2 border-t border-border">P</td><td className="p-2 border-t border-border text-center">86-90</td><td className="p-2 border-t border-border text-center">66-70</td><td className="p-2 border-t border-border text-center">92-96</td></tr>
-                        <tr><td className="p-2 border-t border-border">M</td><td className="p-2 border-t border-border text-center">90-94</td><td className="p-2 border-t border-border text-center">70-74</td><td className="p-2 border-t border-border text-center">96-100</td></tr>
-                        <tr><td className="p-2 border-t border-border">G</td><td className="p-2 border-t border-border text-center">94-98</td><td className="p-2 border-t border-border text-center">74-78</td><td className="p-2 border-t border-border text-center">100-104</td></tr>
-                        <tr><td className="p-2 border-t border-border">GG</td><td className="p-2 border-t border-border text-center">98-102</td><td className="p-2 border-t border-border text-center">78-82</td><td className="p-2 border-t border-border text-center">104-108</td></tr>
-                      </tbody>
-                    </table>
+                    {sizeGuide && sizeGuide.headers && sizeGuide.rows && sizeGuide.rows.length > 0 ? (
+                      <table className="w-full text-xs border border-border rounded">
+                        <thead>
+                          <tr className="bg-muted">
+                            {sizeGuide.headers.map((h: string, i: number) => (
+                              <th key={i} className={`p-2 ${i === 0 ? "text-left" : "text-center"}`}>{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {sizeGuide.rows.map((row: string[], ri: number) => (
+                            <tr key={ri}>
+                              {row.map((cell: string, ci: number) => (
+                                <td key={ci} className={`p-2 border-t border-border ${ci === 0 ? "" : "text-center"}`}>{cell}</td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <>
+                        <p className="mb-2">Consulte nosso guia de tamanhos:</p>
+                        <table className="w-full text-xs border border-border rounded">
+                          <thead><tr className="bg-muted"><th className="p-2 text-left">Tam</th><th className="p-2">Busto</th><th className="p-2">Cintura</th><th className="p-2">Quadril</th></tr></thead>
+                          <tbody>
+                            <tr><td className="p-2 border-t border-border">PP</td><td className="p-2 border-t border-border text-center">82-86</td><td className="p-2 border-t border-border text-center">62-66</td><td className="p-2 border-t border-border text-center">88-92</td></tr>
+                            <tr><td className="p-2 border-t border-border">P</td><td className="p-2 border-t border-border text-center">86-90</td><td className="p-2 border-t border-border text-center">66-70</td><td className="p-2 border-t border-border text-center">92-96</td></tr>
+                            <tr><td className="p-2 border-t border-border">M</td><td className="p-2 border-t border-border text-center">90-94</td><td className="p-2 border-t border-border text-center">70-74</td><td className="p-2 border-t border-border text-center">96-100</td></tr>
+                            <tr><td className="p-2 border-t border-border">G</td><td className="p-2 border-t border-border text-center">94-98</td><td className="p-2 border-t border-border text-center">74-78</td><td className="p-2 border-t border-border text-center">100-104</td></tr>
+                            <tr><td className="p-2 border-t border-border">GG</td><td className="p-2 border-t border-border text-center">98-102</td><td className="p-2 border-t border-border text-center">78-82</td><td className="p-2 border-t border-border text-center">104-108</td></tr>
+                          </tbody>
+                        </table>
+                      </>
+                    )}
                   </div>
                 )}
                 {activeTab === "policy" && (

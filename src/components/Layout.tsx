@@ -1,8 +1,9 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Search, Heart, ShoppingBag, Menu, X, Home, Grid3X3, ChevronRight } from "lucide-react";
+import { Search, ShoppingBag, Menu, X, Home, Grid3X3, ChevronRight } from "lucide-react";
 import { useState, useCallback } from "react";
 import { useCart } from "@/hooks/useCart";
 import { WHATSAPP, INSTAGRAM } from "@/data/products";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import logo from "@/assets/logo.png";
 
 const navLinks = [
@@ -15,9 +16,10 @@ const navLinks = [
 ];
 
 function AnnouncementBar() {
+  const settings = useSiteSettings();
   return (
     <div className="bg-primary text-primary-foreground text-xs md:text-sm py-2 text-center font-body">
-      🚚 Frete grátis em todos os pedidos | 🔄 Troca em até 7 dias garantida
+      {settings.announcementText}
     </div>
   );
 }

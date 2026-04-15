@@ -3,28 +3,30 @@ import { Star, Truck, RotateCcw, MessageCircle, ShieldCheck, ArrowRight } from "
 import ProductCard from "@/components/ProductCard";
 import { categories, testimonials, formatPrice, INSTAGRAM } from "@/data/products";
 import { useProducts } from "@/hooks/useProducts";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import heroBanner from "@/assets/hero-banner.jpg";
 
 export default function HomePage() {
   const { products, loading } = useProducts();
+  const settings = useSiteSettings();
   const novidades = products.filter(p => p.badge === "novo").slice(0, 8);
   const bestSellers = products.filter(p => p.badge === "bestseller").slice(0, 6);
 
   return (
     <>
-      <HeroSection />
+      <HeroSection heroText={settings.heroText} heroSubtext={settings.heroSubtext} />
       <TrustBar />
       <CategoriesGrid />
-      {!loading && novidades.length > 0 && <ProductSection title="Novidades" products={novidades} scrollable />}
-      {!loading && bestSellers.length > 0 && <BestSellers products={bestSellers} />}
-      <Testimonials />
-      <QuemSomosPreview />
-      <InstagramGrid />
+      {!loading && novidades.length > 0 && settings.sectionsVisible.novidades && <ProductSection title="Novidades" products={novidades} scrollable />}
+      {!loading && bestSellers.length > 0 && settings.sectionsVisible.bestSellers && <BestSellers products={bestSellers} />}
+      {settings.sectionsVisible.testimonials && <Testimonials />}
+      {settings.sectionsVisible.quemSomos && <QuemSomosPreview />}
+      {settings.sectionsVisible.instagram && <InstagramGrid />}
     </>
   );
 }
 
-function HeroSection() {
+function HeroSection({ heroText, heroSubtext }: { heroText: string; heroSubtext: string }) {
   return (
     <section className="relative overflow-hidden">
       <div className="relative h-[70vh] min-h-[500px] max-h-[700px]">
@@ -34,10 +36,10 @@ function HeroSection() {
           <div className="max-w-7xl mx-auto px-4 w-full">
             <div className="max-w-lg">
               <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl font-bold text-primary-foreground leading-tight">
-                Vista-se com Graça e Elegância
+                {heroText}
               </h1>
               <p className="mt-4 text-primary-foreground/80 text-lg font-body">
-                Moda feminina, masculina e infantil para toda a família
+                {heroSubtext}
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link to="/produtos" className="btn-gold">Explorar Coleção</Link>
