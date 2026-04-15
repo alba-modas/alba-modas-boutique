@@ -13,6 +13,7 @@ export default function HomePage() {
   const settings = useSiteSettings();
   const novidades = products.filter(p => p.badge === "novo").slice(0, 8);
   const bestSellers = products.filter(p => p.badge === "bestseller").slice(0, 6);
+  const promocoes = products.filter(p => p.badge === "promo" || p.salePrice).slice(0, 8);
 
   return (
     <>
@@ -20,6 +21,7 @@ export default function HomePage() {
       <TrustBar />
       <CategoriesGrid categories={categories} />
       {!loading && novidades.length > 0 && settings.sectionsVisible.novidades && <ProductSection title="Novidades" products={novidades} scrollable />}
+      {!loading && promocoes.length > 0 && settings.sectionsVisible.promocoes && <ProductSection title="Promoções" products={promocoes} scrollable />}
       {!loading && bestSellers.length > 0 && settings.sectionsVisible.bestSellers && <BestSellers products={bestSellers} />}
       {settings.sectionsVisible.testimonials && <Testimonials />}
       {settings.sectionsVisible.quemSomos && <QuemSomosPreview />}

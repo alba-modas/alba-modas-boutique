@@ -8,6 +8,7 @@ export interface SiteSettings {
   sectionsVisible: {
     novidades: boolean;
     bestSellers: boolean;
+    promocoes: boolean;
     testimonials: boolean;
     instagram: boolean;
     quemSomos: boolean;
@@ -19,7 +20,7 @@ export const defaultSettings: SiteSettings = {
   heroSubtext: "Moda feminina, masculina e infantil para toda a família",
   heroImage: "",
   announcementText: "🚚 Frete grátis em todos os pedidos | 🔄 Troca em até 7 dias garantida",
-  sectionsVisible: { novidades: true, bestSellers: true, testimonials: true, instagram: true, quemSomos: true },
+  sectionsVisible: { novidades: true, bestSellers: true, promocoes: true, testimonials: true, instagram: true, quemSomos: true },
 };
 
 export function useSiteSettings() {

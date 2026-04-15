@@ -946,6 +946,7 @@ function ConfiguracoesTab() {
           <div className="space-y-3">
             {[
               { key: "novidades" as const, label: "Novidades" },
+              { key: "promocoes" as const, label: "Promoções" },
               { key: "bestSellers" as const, label: "Mais Vendidos" },
               { key: "testimonials" as const, label: "Depoimentos" },
               { key: "instagram" as const, label: "Instagram" },
