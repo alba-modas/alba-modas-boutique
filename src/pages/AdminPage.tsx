@@ -176,6 +176,20 @@ function DashboardTab() {
   );
 }
 
+// ==================== CATEGORY SELECT (from DB) ====================
+function CategorySelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [cats, setCats] = useState<any[]>([]);
+  useEffect(() => {
+    supabase.from("categories").select("*").order("sort_order", { ascending: true }).then(({ data }) => setCats(data ?? []));
+  }, []);
+  return (
+    <select value={value} onChange={e => onChange(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-muted text-sm font-body border border-border">
+      {cats.length === 0 && <option value="">Carregando...</option>}
+      {cats.map(c => <option key={c.id} value={c.slug}>{c.name}</option>)}
+    </select>
+  );
+}
+
 // ==================== PRODUTOS ====================
 interface ProductForm {
   name: string; slug: string; description: string; category: string;
@@ -187,7 +201,7 @@ interface ProductForm {
 }
 
 const emptyProduct: ProductForm = {
-  name: "", slug: "", description: "", category: "feminino",
+  name: "", slug: "", description: "", category: "",
   price: 0, sale_price: null, image: "", image2: "",
   images: [],
   colors: [], sizes: [], stock: 0, badge: "", active: true,
@@ -366,14 +380,7 @@ function ProdutosTab() {
               <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value, slug: generateSlug(e.target.value) }))} placeholder="Nome do produto" className="w-full px-3 py-2 rounded-lg bg-muted text-sm font-body border border-border" />
               <input value={form.slug} onChange={e => setForm(f => ({ ...f, slug: e.target.value }))} placeholder="Slug (URL)" className="w-full px-3 py-2 rounded-lg bg-muted text-sm font-body border border-border" />
               <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Descrição" rows={3} className="w-full px-3 py-2 rounded-lg bg-muted text-sm font-body border border-border resize-none" />
-              <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className="w-full px-3 py-2 rounded-lg bg-muted text-sm font-body border border-border">
-                <option value="feminino">Feminino</option>
-                <option value="masculino">Masculino</option>
-                <option value="infantil">Infantil</option>
-                <option value="calcados">Calçados</option>
-                <option value="perfumes">Perfumes & Hidratantes</option>
-                <option value="acessorios">Acessórios</option>
-              </select>
+              <CategorySelect value={form.category} onChange={v => setForm(f => ({ ...f, category: v }))} />
               <div className="grid grid-cols-2 gap-3">
                 <input type="number" step="0.01" value={form.price || ""} onChange={e => setForm(f => ({ ...f, price: Number(e.target.value) }))} placeholder="Preço (R$)" className="w-full px-3 py-2 rounded-lg bg-muted text-sm font-body border border-border" />
                 <input type="number" step="0.01" value={form.sale_price ?? ""} onChange={e => setForm(f => ({ ...f, sale_price: e.target.value ? Number(e.target.value) : null }))} placeholder="Preço Promocional" className="w-full px-3 py-2 rounded-lg bg-muted text-sm font-body border border-border" />

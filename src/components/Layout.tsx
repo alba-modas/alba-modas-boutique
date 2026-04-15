@@ -4,16 +4,17 @@ import { useState, useCallback } from "react";
 import { useCart } from "@/hooks/useCart";
 import { WHATSAPP, INSTAGRAM } from "@/data/products";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { useCategories } from "@/hooks/useCategories";
 import logo from "@/assets/logo.png";
 
-const navLinks = [
-  { label: "Início", to: "/" },
-  { label: "Feminino", to: "/produtos?categoria=feminino" },
-  { label: "Masculino", to: "/produtos?categoria=masculino" },
-  { label: "Infantil", to: "/produtos?categoria=infantil" },
-  { label: "Acessórios", to: "/produtos?categoria=acessorios" },
-  { label: "Promoções", to: "/produtos?categoria=perfumes", isPromo: true },
-];
+function useNavLinks() {
+  const { categories } = useCategories();
+  const links = [
+    { label: "Início", to: "/", isPromo: false },
+    ...categories.map(c => ({ label: c.name, to: `/produtos?categoria=${c.slug}`, isPromo: false })),
+  ];
+  return links;
+}
 
 function AnnouncementBar() {
   const settings = useSiteSettings();
@@ -30,6 +31,7 @@ function Header() {
   const { totalItems, setIsOpen } = useCart();
   const location = useLocation();
   const navigate = useNavigate();
+  const navLinks = useNavLinks();
 
   const openMenu = useCallback(() => setMobileOpen(true), []);
   const closeMenu = useCallback(() => setMobileOpen(false), []);

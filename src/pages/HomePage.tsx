@@ -1,13 +1,15 @@
 import { Link } from "react-router-dom";
 import { Star, Truck, RotateCcw, MessageCircle, ShieldCheck, ArrowRight } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
-import { categories, testimonials, formatPrice, INSTAGRAM } from "@/data/products";
+import { testimonials, INSTAGRAM } from "@/data/products";
 import { useProducts } from "@/hooks/useProducts";
+import { useCategories } from "@/hooks/useCategories";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import heroBanner from "@/assets/hero-banner.jpg";
 
 export default function HomePage() {
   const { products, loading } = useProducts();
+  const { categories } = useCategories();
   const settings = useSiteSettings();
   const novidades = products.filter(p => p.badge === "novo").slice(0, 8);
   const bestSellers = products.filter(p => p.badge === "bestseller").slice(0, 6);
@@ -16,7 +18,7 @@ export default function HomePage() {
     <>
       <HeroSection heroText={settings.heroText} heroSubtext={settings.heroSubtext} heroImage={settings.heroImage} />
       <TrustBar />
-      <CategoriesGrid />
+      <CategoriesGrid categories={categories} />
       {!loading && novidades.length > 0 && settings.sectionsVisible.novidades && <ProductSection title="Novidades" products={novidades} scrollable />}
       {!loading && bestSellers.length > 0 && settings.sectionsVisible.bestSellers && <BestSellers products={bestSellers} />}
       {settings.sectionsVisible.testimonials && <Testimonials />}
@@ -77,7 +79,8 @@ function TrustBar() {
   );
 }
 
-function CategoriesGrid() {
+function CategoriesGrid({ categories }: { categories: { name: string; slug: string; image: string; emoji: string }[] }) {
+  if (categories.length === 0) return null;
   return (
     <section className="py-16 max-w-7xl mx-auto px-4">
       <h2 className="font-heading text-2xl md:text-3xl text-center mb-8">Explore por Categoria</h2>
@@ -88,7 +91,11 @@ function CategoriesGrid() {
             key={cat.slug}
             className="group block relative overflow-hidden rounded-xl aspect-[3/4]"
           >
-            <img src={cat.image} alt={cat.name} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" width={300} height={400} />
+            {cat.image ? (
+              <img src={cat.image} alt={cat.name} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" width={300} height={400} />
+            ) : (
+              <div className="absolute inset-0 bg-muted flex items-center justify-center text-5xl">{cat.emoji || "📁"}</div>
+            )}
             <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 to-transparent" />
             <div className="absolute bottom-4 left-4">
               <span className="text-2xl">{cat.emoji}</span>
