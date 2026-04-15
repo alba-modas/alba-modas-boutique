@@ -195,9 +195,11 @@ export type Database = {
           id: string
           image: string
           image2: string | null
+          images: string[] | null
           name: string
           price: number
           sale_price: number | null
+          size_guide: Json | null
           sizes: string[] | null
           slug: string
           stock: number | null
@@ -213,9 +215,11 @@ export type Database = {
           id?: string
           image?: string
           image2?: string | null
+          images?: string[] | null
           name: string
           price: number
           sale_price?: number | null
+          size_guide?: Json | null
           sizes?: string[] | null
           slug: string
           stock?: number | null
@@ -231,9 +235,11 @@ export type Database = {
           id?: string
           image?: string
           image2?: string | null
+          images?: string[] | null
           name?: string
           price?: number
           sale_price?: number | null
+          size_guide?: Json | null
           sizes?: string[] | null
           slug?: string
           stock?: number | null
