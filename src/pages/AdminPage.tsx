@@ -3,11 +3,13 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Package, ShoppingCart, Users, Tag, BarChart3, AlertTriangle,
-  LogOut, Plus, Edit, Trash2, Download, Search, X, Save, Upload, Image as ImageIcon
+  LogOut, Plus, Edit, Trash2, Download, Search, X, Save, Upload, Settings
 } from "lucide-react";
 import { formatPrice } from "@/data/products";
+import { toast } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
 
-type Tab = "dashboard" | "produtos" | "pedidos" | "estoque" | "leads" | "cupons";
+type Tab = "dashboard" | "produtos" | "pedidos" | "estoque" | "leads" | "cupons" | "configuracoes";
 
 export default function AdminPage() {
   const [user, setUser] = useState<any>(null);
@@ -33,36 +35,29 @@ export default function AdminPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    setSuccess("");
+    setError(""); setSuccess("");
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) setError(error.message);
   };
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    setSuccess("");
+    setError(""); setSuccess("");
     const { error } = await supabase.auth.signUp({ email, password });
-    if (error) {
-      setError(error.message);
-    } else {
-      setSuccess("Conta criada com sucesso! Fazendo login...");
-      setTimeout(async () => {
-        await supabase.auth.signInWithPassword({ email, password });
-      }, 1000);
+    if (error) { setError(error.message); } else {
+      setSuccess("Conta criada! Fazendo login...");
+      setTimeout(async () => { await supabase.auth.signInWithPassword({ email, password }); }, 1000);
     }
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-  };
+  const handleLogout = async () => { await supabase.auth.signOut(); };
 
   if (loading) return <div className="flex items-center justify-center min-h-screen bg-muted"><div className="animate-spin w-8 h-8 border-4 border-gold border-t-transparent rounded-full" /></div>;
 
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted px-4">
+        <Toaster />
         <div className="bg-card rounded-xl shadow-lg p-8 w-full max-w-md">
           <h1 className="font-heading text-2xl text-center mb-2">Painel Admin</h1>
           <p className="font-body text-sm text-muted-foreground text-center mb-6">Alba Modas e Acessórios</p>
@@ -88,10 +83,12 @@ export default function AdminPage() {
     { key: "estoque", label: "Estoque", icon: <AlertTriangle className="w-4 h-4" /> },
     { key: "leads", label: "Leads", icon: <Users className="w-4 h-4" /> },
     { key: "cupons", label: "Cupons", icon: <Tag className="w-4 h-4" /> },
+    { key: "configuracoes", label: "Configurações", icon: <Settings className="w-4 h-4" /> },
   ];
 
   return (
     <div className="min-h-screen bg-muted">
+      <Toaster />
       <header className="bg-primary text-primary-foreground px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Link to="/" className="font-heading text-lg">Alba Modas</Link>
@@ -109,13 +106,8 @@ export default function AdminPage() {
         <aside className="w-56 bg-card border-r border-border min-h-[calc(100vh-52px)] hidden md:block">
           <nav className="p-4 space-y-1">
             {tabs.map(t => (
-              <button
-                key={t.key}
-                onClick={() => setTab(t.key)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-body transition-colors ${tab === t.key ? "bg-gold/10 text-gold font-medium" : "hover:bg-muted"}`}
-              >
-                {t.icon}
-                {t.label}
+              <button key={t.key} onClick={() => setTab(t.key)} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-body transition-colors ${tab === t.key ? "bg-gold/10 text-gold font-medium" : "hover:bg-muted"}`}>
+                {t.icon} {t.label}
               </button>
             ))}
           </nav>
@@ -123,13 +115,8 @@ export default function AdminPage() {
 
         <div className="md:hidden flex overflow-x-auto border-b border-border bg-card px-2 gap-1 hide-scrollbar">
           {tabs.map(t => (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={`flex items-center gap-1.5 px-3 py-2.5 text-xs font-body whitespace-nowrap border-b-2 transition-colors ${tab === t.key ? "border-gold text-gold" : "border-transparent text-muted-foreground"}`}
-            >
-              {t.icon}
-              {t.label}
+            <button key={t.key} onClick={() => setTab(t.key)} className={`flex items-center gap-1.5 px-3 py-2.5 text-xs font-body whitespace-nowrap border-b-2 transition-colors ${tab === t.key ? "border-gold text-gold" : "border-transparent text-muted-foreground"}`}>
+              {t.icon} {t.label}
             </button>
           ))}
         </div>
@@ -141,15 +128,16 @@ export default function AdminPage() {
           {tab === "estoque" && <EstoqueTab />}
           {tab === "leads" && <LeadsTab />}
           {tab === "cupons" && <CuponsTab />}
+          {tab === "configuracoes" && <ConfiguracoesTab />}
         </main>
       </div>
     </div>
   );
 }
 
+// ==================== DASHBOARD ====================
 function DashboardTab() {
   const [stats, setStats] = useState({ products: 0, orders: 0, lowStock: 0, leads: 0 });
-
   useEffect(() => {
     const load = async () => {
       const [p, o, l] = await Promise.all([
@@ -185,20 +173,11 @@ function DashboardTab() {
   );
 }
 
+// ==================== PRODUTOS ====================
 interface ProductForm {
-  name: string;
-  slug: string;
-  description: string;
-  category: string;
-  price: number;
-  sale_price: number | null;
-  image: string;
-  image2: string;
-  colors: string[];
-  sizes: string[];
-  stock: number;
-  badge: string;
-  active: boolean;
+  name: string; slug: string; description: string; category: string;
+  price: number; sale_price: number | null; image: string; image2: string;
+  colors: string[]; sizes: string[]; stock: number; badge: string; active: boolean;
 }
 
 const emptyProduct: ProductForm = {
@@ -226,13 +205,7 @@ function ProdutosTab() {
 
   const filtered = products.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
 
-  const openNew = () => {
-    setForm({ ...emptyProduct });
-    setColorsInput("");
-    setSizesInput("");
-    setEditingId(null);
-    setShowForm(true);
-  };
+  const openNew = () => { setForm({ ...emptyProduct }); setColorsInput(""); setSizesInput(""); setEditingId(null); setShowForm(true); };
 
   const openEdit = (p: any) => {
     setForm({
@@ -261,8 +234,10 @@ function ProdutosTab() {
 
     if (editingId) {
       await supabase.from("products").update(payload).eq("id", editingId);
+      toast.success("Produto atualizado!");
     } else {
       await supabase.from("products").insert(payload);
+      toast.success("Produto criado!");
     }
     setSaving(false);
     setShowForm(false);
@@ -273,6 +248,7 @@ function ProdutosTab() {
     if (!confirm("Excluir este produto?")) return;
     await supabase.from("products").delete().eq("id", id);
     setProducts(prev => prev.filter(p => p.id !== id));
+    toast.success("Produto excluído!");
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: "image" | "image2") => {
@@ -284,13 +260,14 @@ function ProdutosTab() {
     if (!error && data) {
       const { data: urlData } = supabase.storage.from("product-images").getPublicUrl(data.path);
       setForm(f => ({ ...f, [field]: urlData.publicUrl }));
+      toast.success("Imagem enviada!");
     }
   };
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="font-heading text-xl">Produtos</h2>
+        <h2 className="font-heading text-xl">Produtos ({products.length})</h2>
         <button onClick={openNew} className="btn-gold text-xs py-2 px-3 flex items-center gap-1"><Plus className="w-3 h-3" /> Novo Produto</button>
       </div>
 
@@ -320,7 +297,7 @@ function ProdutosTab() {
             </div>
             <div className="space-y-3">
               <div>
-                <label className="block text-xs font-body text-muted-foreground mb-1">Imagem principal (URL ou upload)</label>
+                <label className="block text-xs font-body text-muted-foreground mb-1">Imagem principal</label>
                 <div className="flex gap-2">
                   <input value={form.image} onChange={e => setForm(f => ({ ...f, image: e.target.value }))} placeholder="URL da imagem" className="flex-1 px-3 py-2 rounded-lg bg-muted text-sm font-body border border-border" />
                   <label className="btn-outline-dark text-xs py-2 px-3 cursor-pointer flex items-center gap-1">
@@ -377,13 +354,13 @@ function ProdutosTab() {
               <tr key={p.id} className="border-b border-border/50 hover:bg-muted/30">
                 <td className="p-3">
                   <div className="flex items-center gap-3">
-                    {p.image ? <img src={p.image} alt="" className="w-10 h-10 rounded object-cover" /> : <div className="w-10 h-10 rounded bg-muted flex items-center justify-center"><ImageIcon className="w-4 h-4 text-muted-foreground" /></div>}
+                    {p.image ? <img src={p.image} alt="" className="w-10 h-10 rounded object-cover" /> : <div className="w-10 h-10 rounded bg-muted flex items-center justify-center"><Package className="w-4 h-4 text-muted-foreground" /></div>}
                     <span className="font-medium truncate max-w-[200px]">{p.name}</span>
                   </div>
                 </td>
                 <td className="p-3 hidden md:table-cell capitalize">{p.category}</td>
                 <td className="p-3 text-right">{p.sale_price ? <><span className="line-through text-muted-foreground mr-1">{formatPrice(p.price)}</span><span className="text-sale">{formatPrice(p.sale_price)}</span></> : formatPrice(p.price)}</td>
-                <td className="p-3 text-center"><span className={`px-2 py-0.5 rounded text-xs ${(p.stock ?? 0) <= 3 ? "bg-sale/10 text-sale" : "bg-gold/10 text-gold"}`}>{p.stock ?? 0}</span></td>
+                <td className="p-3 text-center"><span className={`px-2 py-0.5 rounded text-xs ${(p.stock ?? 0) === 0 ? "bg-sale/10 text-sale" : (p.stock ?? 0) <= 3 ? "bg-orange-100 text-orange-700" : "bg-gold/10 text-gold"}`}>{(p.stock ?? 0) === 0 ? "Esgotado" : p.stock ?? 0}</span></td>
                 <td className="p-3 text-center flex items-center justify-center gap-1">
                   <button onClick={() => openEdit(p)} className="p-1.5 hover:bg-gold/10 rounded text-gold"><Edit className="w-4 h-4" /></button>
                   <button onClick={() => deleteProduct(p.id)} className="p-1.5 hover:bg-sale/10 rounded text-sale"><Trash2 className="w-4 h-4" /></button>
@@ -398,24 +375,23 @@ function ProdutosTab() {
   );
 }
 
+// ==================== PEDIDOS ====================
 function PedidosTab() {
   const [orders, setOrders] = useState<any[]>([]);
-
   useEffect(() => {
     supabase.from("orders").select("*").order("created_at", { ascending: false }).then(({ data }) => setOrders(data ?? []));
   }, []);
 
   const statusColors: Record<string, string> = {
-    recebido: "bg-blue-100 text-blue-700",
-    confirmado: "bg-gold/10 text-gold",
-    separando: "bg-orange-100 text-orange-700",
-    enviado: "bg-purple-100 text-purple-700",
+    recebido: "bg-blue-100 text-blue-700", confirmado: "bg-gold/10 text-gold",
+    separando: "bg-orange-100 text-orange-700", enviado: "bg-purple-100 text-purple-700",
     entregue: "bg-green-100 text-green-700",
   };
 
   const updateStatus = async (id: string, status: string) => {
     await supabase.from("orders").update({ status }).eq("id", id);
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
+    toast.success("Status atualizado!");
   };
 
   return (
@@ -433,11 +409,7 @@ function PedidosTab() {
               <div className="text-right">
                 <span className="font-heading text-lg">{formatPrice(Number(o.total))}</span>
                 <div className="mt-1">
-                  <select
-                    value={o.status}
-                    onChange={e => updateStatus(o.id, e.target.value)}
-                    className={`text-xs font-body px-2 py-1 rounded border-none ${statusColors[o.status] ?? ""}`}
-                  >
+                  <select value={o.status} onChange={e => updateStatus(o.id, e.target.value)} className={`text-xs font-body px-2 py-1 rounded border-none ${statusColors[o.status] ?? ""}`}>
                     <option value="recebido">Recebido</option>
                     <option value="confirmado">Confirmado</option>
                     <option value="separando">Separando</option>
@@ -455,9 +427,9 @@ function PedidosTab() {
   );
 }
 
+// ==================== ESTOQUE ====================
 function EstoqueTab() {
   const [products, setProducts] = useState<any[]>([]);
-
   useEffect(() => {
     supabase.from("products").select("*").order("stock", { ascending: true }).then(({ data }) => setProducts(data ?? []));
   }, []);
@@ -494,9 +466,9 @@ function EstoqueTab() {
   );
 }
 
+// ==================== LEADS ====================
 function LeadsTab() {
   const [leads, setLeads] = useState<any[]>([]);
-
   useEffect(() => {
     supabase.from("leads").select("*").order("created_at", { ascending: false }).then(({ data }) => setLeads(data ?? []));
   }, []);
@@ -505,25 +477,14 @@ function LeadsTab() {
     const csv = "Telefone,Data\n" + leads.map(l => `${l.phone},${new Date(l.created_at).toLocaleDateString("pt-BR")}`).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "leads-alba-modas.csv";
-    a.click();
-  };
-
-  const copyAll = () => {
-    const text = leads.map(l => l.phone).join("\n");
-    navigator.clipboard.writeText(text);
+    const a = document.createElement("a"); a.href = url; a.download = "leads-alba-modas.csv"; a.click();
   };
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h2 className="font-heading text-xl">Leads ({leads.length})</h2>
-        <div className="flex gap-2">
-          <button onClick={copyAll} className="btn-outline-dark text-xs py-2 px-3">Copiar Todos</button>
-          <button onClick={exportCSV} className="btn-gold text-xs py-2 px-3 flex items-center gap-1"><Download className="w-3 h-3" /> Exportar CSV</button>
-        </div>
+        <button onClick={exportCSV} className="btn-gold text-xs py-2 px-3 flex items-center gap-1"><Download className="w-3 h-3" /> Exportar CSV</button>
       </div>
       <div className="bg-card rounded-xl shadow-sm overflow-hidden">
         <table className="w-full text-sm font-body">
@@ -543,6 +504,7 @@ function LeadsTab() {
   );
 }
 
+// ==================== CUPONS ====================
 function CuponsTab() {
   const [coupons, setCoupons] = useState<any[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -554,15 +516,13 @@ function CuponsTab() {
 
   const createCoupon = async () => {
     const { data } = await supabase.from("coupons").insert({
-      code: form.code.toUpperCase(),
-      discount_type: form.discount_type,
-      discount_value: form.discount_value,
-      usage_limit: form.usage_limit,
-      active: true,
+      code: form.code.toUpperCase(), discount_type: form.discount_type,
+      discount_value: form.discount_value, usage_limit: form.usage_limit, active: true,
     }).select().single();
     if (data) setCoupons(prev => [data, ...prev]);
     setShowForm(false);
     setForm({ code: "", discount_type: "percent", discount_value: 10, usage_limit: 100 });
+    toast.success("Cupom criado!");
   };
 
   const toggleCoupon = async (id: string, active: boolean) => {
@@ -573,6 +533,7 @@ function CuponsTab() {
   const deleteCoupon = async (id: string) => {
     await supabase.from("coupons").delete().eq("id", id);
     setCoupons(prev => prev.filter(c => c.id !== id));
+    toast.success("Cupom excluído!");
   };
 
   return (
@@ -581,7 +542,6 @@ function CuponsTab() {
         <h2 className="font-heading text-xl">Cupons</h2>
         <button onClick={() => setShowForm(!showForm)} className="btn-gold text-xs py-2 px-3 flex items-center gap-1"><Plus className="w-3 h-3" /> Novo Cupom</button>
       </div>
-
       {showForm && (
         <div className="bg-card rounded-xl p-5 shadow-sm mb-6 space-y-3">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -596,7 +556,6 @@ function CuponsTab() {
           <button onClick={createCoupon} className="btn-gold text-xs py-2 px-4">Criar Cupom</button>
         </div>
       )}
-
       <div className="bg-card rounded-xl shadow-sm overflow-hidden">
         <table className="w-full text-sm font-body">
           <thead><tr className="border-b border-border bg-muted/50"><th className="text-left p-3">Código</th><th className="text-center p-3">Desconto</th><th className="text-center p-3">Uso</th><th className="text-center p-3">Status</th><th className="text-center p-3">Ações</th></tr></thead>
@@ -619,6 +578,92 @@ function CuponsTab() {
             {coupons.length === 0 && <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">Nenhum cupom criado</td></tr>}
           </tbody>
         </table>
+      </div>
+    </div>
+  );
+}
+
+// ==================== CONFIGURAÇÕES DO SITE ====================
+interface SiteSettings {
+  heroText: string;
+  heroSubtext: string;
+  announcementText: string;
+  sectionsVisible: { novidades: boolean; bestSellers: boolean; testimonials: boolean; instagram: boolean; quemSomos: boolean };
+}
+
+const defaultSettings: SiteSettings = {
+  heroText: "Vista-se com Graça e Elegância",
+  heroSubtext: "Moda feminina, masculina e infantil para toda a família",
+  announcementText: "🚚 Frete grátis em todos os pedidos | 🔄 Troca em até 7 dias garantida",
+  sectionsVisible: { novidades: true, bestSellers: true, testimonials: true, instagram: true, quemSomos: true },
+};
+
+function ConfiguracoesTab() {
+  const [settings, setSettings] = useState<SiteSettings>(() => {
+    try {
+      const saved = localStorage.getItem("alba-site-settings");
+      return saved ? { ...defaultSettings, ...JSON.parse(saved) } : defaultSettings;
+    } catch { return defaultSettings; }
+  });
+
+  const save = () => {
+    localStorage.setItem("alba-site-settings", JSON.stringify(settings));
+    toast.success("Configurações salvas! Recarregue a loja para ver as alterações.");
+  };
+
+  return (
+    <div>
+      <h2 className="font-heading text-xl mb-6">Configurações do Site</h2>
+
+      <div className="space-y-6">
+        <div className="bg-card rounded-xl p-5 shadow-sm space-y-4">
+          <h3 className="font-heading text-lg">Banner Principal (Hero)</h3>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs font-body text-muted-foreground mb-1">Título principal</label>
+              <input value={settings.heroText} onChange={e => setSettings(s => ({ ...s, heroText: e.target.value }))} className="w-full px-3 py-2 rounded-lg bg-muted text-sm font-body border border-border" />
+            </div>
+            <div>
+              <label className="block text-xs font-body text-muted-foreground mb-1">Subtítulo</label>
+              <input value={settings.heroSubtext} onChange={e => setSettings(s => ({ ...s, heroSubtext: e.target.value }))} className="w-full px-3 py-2 rounded-lg bg-muted text-sm font-body border border-border" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-card rounded-xl p-5 shadow-sm space-y-4">
+          <h3 className="font-heading text-lg">Barra de Anúncio</h3>
+          <input value={settings.announcementText} onChange={e => setSettings(s => ({ ...s, announcementText: e.target.value }))} className="w-full px-3 py-2 rounded-lg bg-muted text-sm font-body border border-border" />
+        </div>
+
+        <div className="bg-card rounded-xl p-5 shadow-sm space-y-4">
+          <h3 className="font-heading text-lg">Visibilidade das Seções</h3>
+          <div className="space-y-3">
+            {[
+              { key: "novidades" as const, label: "Novidades" },
+              { key: "bestSellers" as const, label: "Mais Vendidos" },
+              { key: "testimonials" as const, label: "Depoimentos" },
+              { key: "instagram" as const, label: "Instagram" },
+              { key: "quemSomos" as const, label: "Quem Somos (preview)" },
+            ].map(item => (
+              <label key={item.key} className="flex items-center gap-3 text-sm font-body">
+                <input
+                  type="checkbox"
+                  checked={settings.sectionsVisible[item.key]}
+                  onChange={e => setSettings(s => ({
+                    ...s,
+                    sectionsVisible: { ...s.sectionsVisible, [item.key]: e.target.checked }
+                  }))}
+                  className="rounded accent-gold"
+                />
+                {item.label}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <button onClick={save} className="btn-gold flex items-center gap-2">
+          <Save className="w-4 h-4" /> Salvar Configurações
+        </button>
       </div>
     </div>
   );
