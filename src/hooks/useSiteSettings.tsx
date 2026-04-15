@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 export interface SiteSettings {
   heroText: string;
   heroSubtext: string;
+  heroImage: string;
   announcementText: string;
   sectionsVisible: {
     novidades: boolean;
