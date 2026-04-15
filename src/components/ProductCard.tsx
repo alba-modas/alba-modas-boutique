@@ -1,18 +1,22 @@
-import { Heart, Share2 } from "lucide-react";
+import { Heart, Copy } from "lucide-react";
 import type { Product } from "@/data/products";
-import { formatPrice, WHATSAPP } from "@/data/products";
+import { formatPrice } from "@/data/products";
 import { useCart } from "@/hooks/useCart";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
 
 export default function ProductCard({ product, className = "", compact = false }: { product: Product; className?: string; compact?: boolean }) {
   const { addItem } = useCart();
   const displayPrice = product.salePrice ?? product.price;
+  const isOutOfStock = product.stock !== undefined && product.stock <= 0;
 
-  const shareWhatsApp = (e: React.MouseEvent) => {
+  const shareLink = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const msg = encodeURIComponent(`Olha essa peça linda da Alba Modas! ${product.name} por ${formatPrice(displayPrice)}`);
-    window.open(`https://wa.me/?text=${msg}`, "_blank");
+    const url = `${window.location.origin}/produto/${product.slug}`;
+    navigator.clipboard.writeText(url).then(() => {
+      toast.success("Link copiado!");
+    });
   };
 
   return (
@@ -22,7 +26,7 @@ export default function ProductCard({ product, className = "", compact = false }
           <img
             src={product.image}
             alt={product.name}
-            className={`w-full object-cover group-hover:scale-105 transition-transform duration-500 ${compact ? "aspect-square" : "aspect-[3/4]"}`}
+            className={`w-full object-cover group-hover:scale-105 transition-transform duration-500 ${compact ? "aspect-square" : "aspect-[3/4]"} ${isOutOfStock ? "opacity-50" : ""}`}
             loading="lazy"
             width={compact ? 200 : 400}
             height={compact ? 200 : 533}
@@ -38,7 +42,12 @@ export default function ProductCard({ product, className = "", compact = false }
               </span>
             </div>
           )}
-          {!compact && product.stock !== undefined && product.stock <= 3 && product.stock > 0 && (
+          {isOutOfStock && (
+            <span className="absolute bottom-2 left-2 text-[10px] font-body font-bold bg-sale text-destructive-foreground px-2 py-0.5 rounded">
+              Esgotado
+            </span>
+          )}
+          {!isOutOfStock && !compact && product.stock !== undefined && product.stock <= 3 && product.stock > 0 && (
             <span className="absolute bottom-2 left-2 text-[10px] font-body font-bold bg-sale text-destructive-foreground px-2 py-0.5 rounded">
               Últimas {product.stock} peças!
             </span>
@@ -48,8 +57,8 @@ export default function ProductCard({ product, className = "", compact = false }
               <button className="w-8 h-8 rounded-full flex items-center justify-center bg-background/80 text-foreground hover:bg-background transition-colors" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }} aria-label="Favoritar">
                 <Heart className="w-3.5 h-3.5" />
               </button>
-              <button className="w-8 h-8 rounded-full bg-background/80 text-foreground flex items-center justify-center hover:bg-background transition-colors" onClick={shareWhatsApp} aria-label="Compartilhar">
-                <Share2 className="w-3.5 h-3.5" />
+              <button className="w-8 h-8 rounded-full bg-background/80 text-foreground flex items-center justify-center hover:bg-background transition-colors" onClick={shareLink} aria-label="Compartilhar">
+                <Copy className="w-3.5 h-3.5" />
               </button>
             </div>
           )}

@@ -39,9 +39,9 @@ export default function CarrinhoPage() {
       return `• ${p.name} - Tam: ${i.size ?? "-"} - Cor: ${i.color ?? "-"} - Qtd: ${i.quantity} - ${formatPrice((p.salePrice ?? p.price) * i.quantity)}`;
     }).join("\n");
 
-    const msg = `Olá, Alba Modas e Acessórios! 😊 Gostaria de fazer um pedido:\n\n🛍️ MEU PEDIDO:\n${itemsText}\n\n💰 Subtotal: ${formatPrice(subtotal)}${discount > 0 ? `\n🏷️ Cupom ${coupon.toUpperCase()}: -${formatPrice(discount)}` : ""}\n💰 Total: ${formatPrice(total)}\n📦 Entrega: ${delivery === "retirar" ? "Retirar na Loja" : "Entrega"}\n📍 Bairro: ${neighborhood}\n👤 Nome: ${name}\n📱 WhatsApp: ${phone}\n\nAguardo confirmação! 🙏`;
+    const msg = `Olá, Alba Modas e Acessórios! 😊 Gostaria de fazer um pedido:\n\n🛍️ MEU PEDIDO:\n${itemsText}\n\n💰 Subtotal: ${formatPrice(subtotal)}${discount > 0 ? `\n🏷️ Cupom ${coupon.toUpperCase()}: -${formatPrice(discount)}` : ""}\n💰 Total: ${formatPrice(total)}\n📦 Entrega: ${delivery === "retirar" ? "Retirar na Loja" : "Entrega"}\n📍 Bairro: ${neighborhood}\n📍 Endereço: ${address}\n👤 Nome: ${name}\n📱 WhatsApp: ${phone}\n\nAguardo confirmação! 🙏`;
 
-    window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`, "_blank");
+    window.open(`https://wa.me/5521974190736?text=${encodeURIComponent(msg)}`, "_blank");
   };
 
   if (items.length === 0) {
