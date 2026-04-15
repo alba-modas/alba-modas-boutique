@@ -46,7 +46,7 @@ function Header() {
   return (
     <>
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 h-20 md:h-24 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 h-24 md:h-32 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button type="button" className="lg:hidden p-2 -ml-2 touch-manipulation" onClick={openMenu} aria-label="Abrir menu">
               <Menu className="w-6 h-6" />

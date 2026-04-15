@@ -3,14 +3,14 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Package, ShoppingCart, Users, Tag, BarChart3, AlertTriangle,
-  LogOut, Plus, Edit, Trash2, Download, Search, X, Save, Upload, Settings
+  LogOut, Plus, Edit, Trash2, Download, Search, X, Save, Upload, Settings, Layers
 } from "lucide-react";
 import { formatPrice } from "@/data/products";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { defaultSettings, type SiteSettings } from "@/hooks/useSiteSettings";
 
-type Tab = "dashboard" | "produtos" | "pedidos" | "estoque" | "leads" | "cupons" | "configuracoes";
+type Tab = "dashboard" | "produtos" | "categorias" | "pedidos" | "estoque" | "leads" | "cupons" | "configuracoes";
 
 export default function AdminPage() {
   const [user, setUser] = useState<any>(null);
@@ -80,6 +80,7 @@ export default function AdminPage() {
   const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
     { key: "dashboard", label: "Dashboard", icon: <BarChart3 className="w-4 h-4" /> },
     { key: "produtos", label: "Produtos", icon: <Package className="w-4 h-4" /> },
+    { key: "categorias", label: "Categorias", icon: <Layers className="w-4 h-4" /> },
     { key: "pedidos", label: "Pedidos", icon: <ShoppingCart className="w-4 h-4" /> },
     { key: "estoque", label: "Estoque", icon: <AlertTriangle className="w-4 h-4" /> },
     { key: "leads", label: "Leads", icon: <Users className="w-4 h-4" /> },
@@ -125,6 +126,7 @@ export default function AdminPage() {
         <main className="flex-1 p-4 md:p-6 overflow-auto">
           {tab === "dashboard" && <DashboardTab />}
           {tab === "produtos" && <ProdutosTab />}
+          {tab === "categorias" && <CategoriasTab />}
           {tab === "pedidos" && <PedidosTab />}
           {tab === "estoque" && <EstoqueTab />}
           {tab === "leads" && <LeadsTab />}
