@@ -514,6 +514,153 @@ function ProdutosTab() {
   );
 }
 
+// ==================== CATEGORIAS ====================
+function CategoriasTab() {
+  const [categories, setCategories] = useState<any[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
+  const [emoji, setEmoji] = useState("");
+  const [image, setImage] = useState("");
+  const [sortOrder, setSortOrder] = useState(0);
+  const [saving, setSaving] = useState(false);
+
+  const load = useCallback(async () => {
+    const { data } = await supabase.from("categories").select("*").order("sort_order", { ascending: true });
+    setCategories(data ?? []);
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const generateSlug = (n: string) => n.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+  const openNew = () => { setName(""); setSlug(""); setEmoji(""); setImage(""); setSortOrder(categories.length); setEditingId(null); setShowForm(true); };
+
+  const openEdit = (c: any) => {
+    setName(c.name); setSlug(c.slug); setEmoji(c.emoji || ""); setImage(c.image || ""); setSortOrder(c.sort_order ?? 0);
+    setEditingId(c.id); setShowForm(true);
+  };
+
+  const uploadCategoryImage = async (file: File): Promise<string | null> => {
+    const ext = file.name.split(".").pop();
+    const path = `categories/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const { data, error } = await supabase.storage.from("product-images").upload(path, file);
+    if (!error && data) {
+      const { data: urlData } = supabase.storage.from("product-images").getPublicUrl(data.path);
+      return urlData.publicUrl;
+    }
+    return null;
+  };
+
+  const handleSave = async () => {
+    if (!name.trim()) return;
+    setSaving(true);
+    const payload = { name, slug: slug || generateSlug(name), emoji, image, sort_order: sortOrder };
+    if (editingId) {
+      await supabase.from("categories").update(payload).eq("id", editingId);
+      toast.success("Categoria atualizada!");
+    } else {
+      await supabase.from("categories").insert(payload);
+      toast.success("Categoria criada!");
+    }
+    setSaving(false); setShowForm(false); load();
+  };
+
+  const deleteCategory = async (id: string) => {
+    if (!confirm("Excluir esta categoria?")) return;
+    await supabase.from("categories").delete().eq("id", id);
+    setCategories(prev => prev.filter(c => c.id !== id));
+    toast.success("Categoria excluída!");
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="font-heading text-xl">Categorias ({categories.length})</h2>
+        <button onClick={openNew} className="btn-gold text-xs py-2 px-3 flex items-center gap-1"><Plus className="w-3 h-3" /> Nova Categoria</button>
+      </div>
+
+      {showForm && (
+        <div className="bg-card rounded-xl p-5 shadow-sm mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-heading text-lg">{editingId ? "Editar Categoria" : "Nova Categoria"}</h3>
+            <button onClick={() => setShowForm(false)}><X className="w-5 h-5" /></button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-body text-muted-foreground mb-1">Nome</label>
+                <input value={name} onChange={e => { setName(e.target.value); if (!editingId) setSlug(generateSlug(e.target.value)); }} placeholder="Ex: Feminino" className="w-full px-3 py-2 rounded-lg bg-muted text-sm font-body border border-border" />
+              </div>
+              <div>
+                <label className="block text-xs font-body text-muted-foreground mb-1">Slug (URL)</label>
+                <input value={slug} onChange={e => setSlug(e.target.value)} placeholder="feminino" className="w-full px-3 py-2 rounded-lg bg-muted text-sm font-body border border-border" />
+              </div>
+              <div>
+                <label className="block text-xs font-body text-muted-foreground mb-1">Emoji (opcional)</label>
+                <input value={emoji} onChange={e => setEmoji(e.target.value)} placeholder="👗" className="w-full px-3 py-2 rounded-lg bg-muted text-sm font-body border border-border" />
+              </div>
+              <div>
+                <label className="block text-xs font-body text-muted-foreground mb-1">Ordem de exibição</label>
+                <input type="number" value={sortOrder} onChange={e => setSortOrder(parseInt(e.target.value) || 0)} className="w-full px-3 py-2 rounded-lg bg-muted text-sm font-body border border-border" />
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-body text-muted-foreground mb-1">Foto de capa</label>
+                <div className="flex gap-2">
+                  <input value={image} onChange={e => setImage(e.target.value)} placeholder="URL da imagem" className="flex-1 px-3 py-2 rounded-lg bg-muted text-sm font-body border border-border" />
+                  <label className="btn-outline-dark text-xs py-2 px-3 cursor-pointer flex items-center gap-1">
+                    <Upload className="w-3 h-3" />
+                    <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const url = await uploadCategoryImage(file);
+                      if (url) { setImage(url); toast.success("Imagem enviada!"); }
+                    }} />
+                  </label>
+                </div>
+                {image && <img src={image} alt="" className="w-full max-h-32 rounded-lg object-cover mt-2" />}
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-end mt-4">
+            <button onClick={handleSave} disabled={saving || !name.trim()} className="btn-gold text-xs py-2 px-6 flex items-center gap-1 disabled:opacity-50">
+              <Save className="w-3 h-3" /> {saving ? "Salvando..." : editingId ? "Salvar" : "Criar Categoria"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="bg-card rounded-xl shadow-sm overflow-hidden">
+        <table className="w-full text-sm font-body">
+          <thead><tr className="border-b border-border bg-muted/50"><th className="text-left p-3">Categoria</th><th className="text-center p-3">Slug</th><th className="text-center p-3">Ordem</th><th className="text-center p-3">Ações</th></tr></thead>
+          <tbody>
+            {categories.map(c => (
+              <tr key={c.id} className="border-b border-border/50 hover:bg-muted/30">
+                <td className="p-3">
+                  <div className="flex items-center gap-3">
+                    {c.image ? <img src={c.image} alt="" className="w-10 h-10 rounded object-cover" /> : <div className="w-10 h-10 rounded bg-muted flex items-center justify-center text-lg">{c.emoji || "📁"}</div>}
+                    <span className="font-medium">{c.name}</span>
+                  </div>
+                </td>
+                <td className="p-3 text-center text-muted-foreground">{c.slug}</td>
+                <td className="p-3 text-center">{c.sort_order ?? 0}</td>
+                <td className="p-3 text-center flex items-center justify-center gap-1">
+                  <button onClick={() => openEdit(c)} className="p-1.5 hover:bg-gold/10 rounded text-gold"><Edit className="w-4 h-4" /></button>
+                  <button onClick={() => deleteCategory(c.id)} className="p-1.5 hover:bg-sale/10 rounded text-sale"><Trash2 className="w-4 h-4" /></button>
+                </td>
+              </tr>
+            ))}
+            {categories.length === 0 && <tr><td colSpan={4} className="p-8 text-center text-muted-foreground">Nenhuma categoria cadastrada</td></tr>}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 // ==================== PEDIDOS ====================
 function PedidosTab() {
   const [orders, setOrders] = useState<any[]>([]);
