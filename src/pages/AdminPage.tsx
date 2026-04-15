@@ -8,6 +8,7 @@ import {
 import { formatPrice } from "@/data/products";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
+import { defaultSettings, type SiteSettings } from "@/hooks/useSiteSettings";
 
 type Tab = "dashboard" | "produtos" | "pedidos" | "estoque" | "leads" | "cupons" | "configuracoes";
 
@@ -177,13 +178,19 @@ function DashboardTab() {
 interface ProductForm {
   name: string; slug: string; description: string; category: string;
   price: number; sale_price: number | null; image: string; image2: string;
+  images: string[];
   colors: string[]; sizes: string[]; stock: number; badge: string; active: boolean;
+  sizeGuideHeaders: string[];
+  sizeGuideRows: string[][];
 }
 
 const emptyProduct: ProductForm = {
   name: "", slug: "", description: "", category: "feminino",
   price: 0, sale_price: null, image: "", image2: "",
+  images: [],
   colors: [], sizes: [], stock: 0, badge: "", active: true,
+  sizeGuideHeaders: ["Tam", "Busto", "Cintura", "Quadril"],
+  sizeGuideRows: [],
 };
 
 function ProdutosTab() {
@@ -208,12 +215,16 @@ function ProdutosTab() {
   const openNew = () => { setForm({ ...emptyProduct }); setColorsInput(""); setSizesInput(""); setEditingId(null); setShowForm(true); };
 
   const openEdit = (p: any) => {
+    const sg = p.size_guide as any;
     setForm({
       name: p.name, slug: p.slug, description: p.description || "",
       category: p.category, price: p.price, sale_price: p.sale_price,
       image: p.image || "", image2: p.image2 || "",
+      images: p.images || [],
       colors: p.colors || [], sizes: p.sizes || [],
       stock: p.stock ?? 0, badge: p.badge || "", active: p.active ?? true,
+      sizeGuideHeaders: sg?.headers || ["Tam", "Busto", "Cintura", "Quadril"],
+      sizeGuideRows: sg?.rows || [],
     });
     setColorsInput((p.colors || []).join(", "));
     setSizesInput((p.sizes || []).join(", "));
@@ -225,11 +236,23 @@ function ProdutosTab() {
 
   const handleSave = async () => {
     setSaving(true);
-    const payload = {
-      ...form,
+    const sizeGuide = form.sizeGuideRows.length > 0 ? { headers: form.sizeGuideHeaders, rows: form.sizeGuideRows } : null;
+    const payload: any = {
+      name: form.name,
+      slug: form.slug || generateSlug(form.name),
+      description: form.description,
+      category: form.category,
+      price: form.price,
+      sale_price: form.sale_price,
+      image: form.image,
+      image2: form.image2,
+      images: form.images,
       colors: colorsInput.split(",").map(s => s.trim()).filter(Boolean),
       sizes: sizesInput.split(",").map(s => s.trim()).filter(Boolean),
-      slug: form.slug || generateSlug(form.name),
+      stock: form.stock,
+      badge: form.badge || null,
+      active: form.active,
+      size_guide: sizeGuide,
     };
 
     if (editingId) {
@@ -251,17 +274,76 @@ function ProdutosTab() {
     toast.success("Produto excluído!");
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: "image" | "image2") => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const uploadImage = async (file: File): Promise<string | null> => {
     const ext = file.name.split(".").pop();
     const path = `products/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
     const { data, error } = await supabase.storage.from("product-images").upload(path, file);
     if (!error && data) {
       const { data: urlData } = supabase.storage.from("product-images").getPublicUrl(data.path);
-      setForm(f => ({ ...f, [field]: urlData.publicUrl }));
+      return urlData.publicUrl;
+    }
+    return null;
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: "image" | "image2") => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = await uploadImage(file);
+    if (url) {
+      setForm(f => ({ ...f, [field]: url }));
       toast.success("Imagem enviada!");
     }
+  };
+
+  const handleMultiImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    for (let i = 0; i < files.length; i++) {
+      const url = await uploadImage(files[i]);
+      if (url) {
+        setForm(f => ({ ...f, images: [...f.images, url] }));
+      }
+    }
+    toast.success("Imagens enviadas!");
+  };
+
+  const removeExtraImage = (index: number) => {
+    setForm(f => ({ ...f, images: f.images.filter((_, i) => i !== index) }));
+  };
+
+  // Size guide helpers
+  const addSizeGuideRow = () => {
+    setForm(f => ({ ...f, sizeGuideRows: [...f.sizeGuideRows, f.sizeGuideHeaders.map(() => "")] }));
+  };
+  const removeSizeGuideRow = (index: number) => {
+    setForm(f => ({ ...f, sizeGuideRows: f.sizeGuideRows.filter((_, i) => i !== index) }));
+  };
+  const updateSizeGuideHeader = (index: number, value: string) => {
+    setForm(f => {
+      const h = [...f.sizeGuideHeaders];
+      h[index] = value;
+      return { ...f, sizeGuideHeaders: h };
+    });
+  };
+  const addSizeGuideColumn = () => {
+    setForm(f => ({
+      ...f,
+      sizeGuideHeaders: [...f.sizeGuideHeaders, ""],
+      sizeGuideRows: f.sizeGuideRows.map(r => [...r, ""]),
+    }));
+  };
+  const removeSizeGuideColumn = (index: number) => {
+    setForm(f => ({
+      ...f,
+      sizeGuideHeaders: f.sizeGuideHeaders.filter((_, i) => i !== index),
+      sizeGuideRows: f.sizeGuideRows.map(r => r.filter((_, i) => i !== index)),
+    }));
+  };
+  const updateSizeGuideCell = (ri: number, ci: number, value: string) => {
+    setForm(f => {
+      const rows = f.sizeGuideRows.map((r, i) => i === ri ? r.map((c, j) => j === ci ? value : c) : r);
+      return { ...f, sizeGuideRows: rows };
+    });
   };
 
   return (
@@ -307,16 +389,25 @@ function ProdutosTab() {
                 </div>
                 {form.image && <img src={form.image} alt="" className="w-20 h-20 rounded object-cover mt-2" />}
               </div>
+
               <div>
-                <label className="block text-xs font-body text-muted-foreground mb-1">Imagem secundária</label>
-                <div className="flex gap-2">
-                  <input value={form.image2} onChange={e => setForm(f => ({ ...f, image2: e.target.value }))} placeholder="URL da imagem 2" className="flex-1 px-3 py-2 rounded-lg bg-muted text-sm font-body border border-border" />
-                  <label className="btn-outline-dark text-xs py-2 px-3 cursor-pointer flex items-center gap-1">
-                    <Upload className="w-3 h-3" />
-                    <input type="file" accept="image/*" className="hidden" onChange={e => handleImageUpload(e, "image2")} />
-                  </label>
-                </div>
+                <label className="block text-xs font-body text-muted-foreground mb-1">Fotos adicionais (múltiplas)</label>
+                <label className="btn-outline-dark text-xs py-2 px-3 cursor-pointer inline-flex items-center gap-1">
+                  <Upload className="w-3 h-3" /> Adicionar Fotos
+                  <input type="file" accept="image/*" multiple className="hidden" onChange={handleMultiImageUpload} />
+                </label>
+                {form.images.length > 0 && (
+                  <div className="flex gap-2 mt-2 flex-wrap">
+                    {form.images.map((img, i) => (
+                      <div key={i} className="relative group">
+                        <img src={img} alt="" className="w-16 h-16 rounded object-cover" />
+                        <button onClick={() => removeExtraImage(i)} className="absolute -top-1 -right-1 bg-sale text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">×</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
+
               <input value={colorsInput} onChange={e => setColorsInput(e.target.value)} placeholder="Cores (separadas por vírgula)" className="w-full px-3 py-2 rounded-lg bg-muted text-sm font-body border border-border" />
               <input value={sizesInput} onChange={e => setSizesInput(e.target.value)} placeholder="Tamanhos (separados por vírgula)" className="w-full px-3 py-2 rounded-lg bg-muted text-sm font-body border border-border" />
               <div className="grid grid-cols-2 gap-3">
@@ -334,6 +425,52 @@ function ProdutosTab() {
               </label>
             </div>
           </div>
+
+          {/* Size Guide Editor */}
+          <div className="mt-4 border-t border-border pt-4">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="font-heading text-sm">Guia de Tamanhos (opcional)</h4>
+              <div className="flex gap-2">
+                <button onClick={addSizeGuideColumn} className="text-xs text-gold hover:underline">+ Coluna</button>
+                <button onClick={addSizeGuideRow} className="text-xs text-gold hover:underline">+ Linha</button>
+              </div>
+            </div>
+            {(form.sizeGuideHeaders.length > 0) && (
+              <div className="overflow-x-auto">
+                <table className="text-xs border border-border rounded w-full">
+                  <thead>
+                    <tr className="bg-muted">
+                      {form.sizeGuideHeaders.map((h, i) => (
+                        <th key={i} className="p-1">
+                          <div className="flex items-center gap-1">
+                            <input value={h} onChange={e => updateSizeGuideHeader(i, e.target.value)} className="w-full px-1 py-0.5 bg-transparent text-xs border-b border-border focus:outline-none" />
+                            {form.sizeGuideHeaders.length > 1 && <button onClick={() => removeSizeGuideColumn(i)} className="text-sale text-[10px]">×</button>}
+                          </div>
+                        </th>
+                      ))}
+                      <th className="p-1 w-6"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {form.sizeGuideRows.map((row, ri) => (
+                      <tr key={ri}>
+                        {row.map((cell, ci) => (
+                          <td key={ci} className="p-1 border-t border-border">
+                            <input value={cell} onChange={e => updateSizeGuideCell(ri, ci, e.target.value)} className="w-full px-1 py-0.5 bg-muted rounded text-xs focus:outline-none" />
+                          </td>
+                        ))}
+                        <td className="p-1 border-t border-border">
+                          <button onClick={() => removeSizeGuideRow(ri)} className="text-sale text-xs">×</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            {form.sizeGuideRows.length === 0 && <p className="text-xs text-muted-foreground">Clique em "+ Linha" para adicionar medidas personalizadas.</p>}
+          </div>
+
           <div className="flex justify-end mt-4">
             <button onClick={handleSave} disabled={saving || !form.name || !form.price} className="btn-gold text-xs py-2 px-6 flex items-center gap-1 disabled:opacity-50">
               <Save className="w-3 h-3" /> {saving ? "Salvando..." : editingId ? "Salvar Alterações" : "Criar Produto"}
@@ -584,20 +721,6 @@ function CuponsTab() {
 }
 
 // ==================== CONFIGURAÇÕES DO SITE ====================
-interface SiteSettings {
-  heroText: string;
-  heroSubtext: string;
-  announcementText: string;
-  sectionsVisible: { novidades: boolean; bestSellers: boolean; testimonials: boolean; instagram: boolean; quemSomos: boolean };
-}
-
-const defaultSettings: SiteSettings = {
-  heroText: "Vista-se com Graça e Elegância",
-  heroSubtext: "Moda feminina, masculina e infantil para toda a família",
-  announcementText: "🚚 Frete grátis em todos os pedidos | 🔄 Troca em até 7 dias garantida",
-  sectionsVisible: { novidades: true, bestSellers: true, testimonials: true, instagram: true, quemSomos: true },
-};
-
 function ConfiguracoesTab() {
   const [settings, setSettings] = useState<SiteSettings>(() => {
     try {
@@ -608,7 +731,9 @@ function ConfiguracoesTab() {
 
   const save = () => {
     localStorage.setItem("alba-site-settings", JSON.stringify(settings));
-    toast.success("Configurações salvas! Recarregue a loja para ver as alterações.");
+    // Dispatch storage event for same-tab listeners
+    window.dispatchEvent(new StorageEvent("storage", { key: "alba-site-settings", newValue: JSON.stringify(settings) }));
+    toast.success("Configurações salvas!");
   };
 
   return (
