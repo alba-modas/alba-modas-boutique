@@ -201,7 +201,7 @@ interface ProductForm {
 }
 
 const emptyProduct: ProductForm = {
-  name: "", slug: "", description: "", category: "feminino",
+  name: "", slug: "", description: "", category: "",
   price: 0, sale_price: null, image: "", image2: "",
   images: [],
   colors: [], sizes: [], stock: 0, badge: "", active: true,
