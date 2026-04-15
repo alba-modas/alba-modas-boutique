@@ -6,12 +6,14 @@ export interface Product {
   salePrice?: number;
   image: string;
   image2?: string;
+  images?: string[];
   category: string;
   colors?: string[];
   sizes?: string[];
   stock?: number;
   badge?: "novo" | "promo" | "bestseller";
   description?: string;
+  sizeGuide?: { headers: string[]; rows: string[][] };
 }
 
 export interface Category {
