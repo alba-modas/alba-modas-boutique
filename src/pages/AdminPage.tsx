@@ -176,6 +176,20 @@ function DashboardTab() {
   );
 }
 
+// ==================== CATEGORY SELECT (from DB) ====================
+function CategorySelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [cats, setCats] = useState<any[]>([]);
+  useEffect(() => {
+    supabase.from("categories").select("*").order("sort_order", { ascending: true }).then(({ data }) => setCats(data ?? []));
+  }, []);
+  return (
+    <select value={value} onChange={e => onChange(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-muted text-sm font-body border border-border">
+      {cats.length === 0 && <option value="">Carregando...</option>}
+      {cats.map(c => <option key={c.id} value={c.slug}>{c.name}</option>)}
+    </select>
+  );
+}
+
 // ==================== PRODUTOS ====================
 interface ProductForm {
   name: string; slug: string; description: string; category: string;
