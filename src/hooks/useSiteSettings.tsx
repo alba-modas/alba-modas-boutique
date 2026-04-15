@@ -17,6 +17,7 @@ export interface SiteSettings {
 export const defaultSettings: SiteSettings = {
   heroText: "Vista-se com Graça e Elegância",
   heroSubtext: "Moda feminina, masculina e infantil para toda a família",
+  heroImage: "",
   announcementText: "🚚 Frete grátis em todos os pedidos | 🔄 Troca em até 7 dias garantida",
   sectionsVisible: { novidades: true, bestSellers: true, testimonials: true, instagram: true, quemSomos: true },
 };
