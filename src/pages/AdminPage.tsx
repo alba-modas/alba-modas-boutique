@@ -745,6 +745,31 @@ function ConfiguracoesTab() {
           <h3 className="font-heading text-lg">Banner Principal (Hero)</h3>
           <div className="space-y-3">
             <div>
+              <label className="block text-xs font-body text-muted-foreground mb-1">Imagem de fundo do banner</label>
+              {settings.heroImage && (
+                <img src={settings.heroImage} alt="Banner preview" className="w-full max-h-40 object-cover rounded-lg mb-2" />
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const ext = file.name.split(".").pop();
+                  const path = `banner/hero-${Date.now()}.${ext}`;
+                  const { error } = await supabase.storage.from("product-images").upload(path, file, { upsert: true });
+                  if (error) { toast.error("Erro ao enviar imagem"); return; }
+                  const { data: { publicUrl } } = supabase.storage.from("product-images").getPublicUrl(path);
+                  setSettings(s => ({ ...s, heroImage: publicUrl }));
+                  toast.success("Imagem do banner enviada!");
+                }}
+                className="w-full text-sm font-body"
+              />
+              {settings.heroImage && (
+                <button type="button" onClick={() => setSettings(s => ({ ...s, heroImage: "" }))} className="text-xs text-sale font-body mt-1">Remover imagem (usar padrão)</button>
+              )}
+            </div>
+            <div>
               <label className="block text-xs font-body text-muted-foreground mb-1">Título principal</label>
               <input value={settings.heroText} onChange={e => setSettings(s => ({ ...s, heroText: e.target.value }))} className="w-full px-3 py-2 rounded-lg bg-muted text-sm font-body border border-border" />
             </div>
