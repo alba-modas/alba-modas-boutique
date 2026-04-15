@@ -36,6 +36,7 @@ function App() {
               </Layout>
               <CartDrawer />
               <WelcomePopup />
+              <Toaster />
             </CartProvider>
           }
         />
