@@ -68,20 +68,7 @@ export const testimonials: Testimonial[] = [
   { name: "Débora R.", text: "Roupas de qualidade com preço justo. O frete grátis é um diferencial! ❤️", avatar: u("photo-1531746020798-e6953c6e8e04", 100), rating: 5 },
 ];
 
-export const outfitCombos = [
-  {
-    title: "Look Elegante para o Culto",
-    products: [allProducts[0], allProducts[7], allProducts[9]],
-  },
-  {
-    title: "Look Casual Feminino",
-    products: [allProducts[5], allProducts[8], allProducts[4]],
-  },
-  {
-    title: "Look Completo com Acessórios",
-    products: [allProducts[6], allProducts[3], allProducts[10]],
-  },
-];
+
 
 export const formatPrice = (v: number) =>
   `R$${v.toFixed(2).replace(".", ",")}`;
