@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import "./styles.css";
+import { Toaster } from "@/components/ui/sonner";
 import { CartProvider } from "@/hooks/useCart";
 import Layout from "@/components/Layout";
 import CartDrawer from "@/components/CartDrawer";
@@ -35,6 +36,7 @@ function App() {
               </Layout>
               <CartDrawer />
               <WelcomePopup />
+              <Toaster />
             </CartProvider>
           }
         />

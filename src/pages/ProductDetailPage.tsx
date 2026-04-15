@@ -1,18 +1,36 @@
 import { Link, useParams } from "react-router-dom";
-import { allProducts, formatPrice, WHATSAPP } from "@/data/products";
+import { formatPrice } from "@/data/products";
 import { useCart } from "@/hooks/useCart";
+import { useProductBySlug, useProducts } from "@/hooks/useProducts";
 import { useState } from "react";
-import { ChevronRight, Minus, Plus, Share2, Star, Truck } from "lucide-react";
+import { ChevronRight, Minus, Plus, Share2, Star, Truck, Copy } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
+import { toast } from "sonner";
 
 export default function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
-  const product = allProducts.find(p => p.slug === slug);
+  const { product, loading } = useProductBySlug(slug);
+  const { products } = useProducts();
   const { addItem } = useCart();
   const [selectedSize, setSelectedSize] = useState<string | undefined>(undefined);
   const [selectedColor, setSelectedColor] = useState<string | undefined>(undefined);
   const [qty, setQty] = useState(1);
   const [activeTab, setActiveTab] = useState<"desc" | "sizes" | "policy">("desc");
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="aspect-[3/4] rounded-xl bg-muted animate-pulse" />
+          <div className="space-y-4">
+            <div className="h-8 bg-muted rounded w-3/4 animate-pulse" />
+            <div className="h-6 bg-muted rounded w-1/2 animate-pulse" />
+            <div className="h-10 bg-muted rounded w-1/3 animate-pulse" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -24,14 +42,20 @@ export default function ProductDetailPage() {
   }
 
   const displayPrice = product.salePrice ?? product.price;
-  const related = allProducts.filter(p => p.category === product.category && p.id !== product.id).slice(0, 4);
+  const related = products.filter(p => p.category === product.category && p.id !== product.id).slice(0, 4);
+  const isOutOfStock = product.stock !== undefined && product.stock <= 0;
 
-  const shareWhatsApp = () => {
-    const msg = encodeURIComponent(`Olha essa peça da Alba Modas! ${product.name} por ${formatPrice(displayPrice)} 😍`);
-    window.open(`https://wa.me/?text=${msg}`, "_blank");
+  const shareLink = () => {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(() => {
+      toast.success("Link copiado!");
+    }).catch(() => {
+      toast.error("Não foi possível copiar o link");
+    });
   };
 
   const handleAddToCart = () => {
+    if (isOutOfStock) return;
     for (let i = 0; i < qty; i++) {
       addItem(product, selectedSize ?? product.sizes?.[0], selectedColor ?? product.colors?.[0]);
     }
@@ -51,8 +75,13 @@ export default function ProductDetailPage() {
 
       <div className="max-w-7xl mx-auto px-4 pb-16">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
-          <div className="aspect-[3/4] rounded-xl overflow-hidden bg-muted">
+          <div className="aspect-[3/4] rounded-xl overflow-hidden bg-muted relative">
             <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+            {isOutOfStock && (
+              <div className="absolute inset-0 bg-foreground/40 flex items-center justify-center">
+                <span className="bg-sale text-destructive-foreground px-6 py-3 rounded-lg font-heading text-xl font-bold">ESGOTADO</span>
+              </div>
+            )}
           </div>
 
           <div>
@@ -86,7 +115,11 @@ export default function ProductDetailPage() {
               )}
             </div>
 
-            {product.stock !== undefined && product.stock <= 3 && product.stock > 0 && (
+            {isOutOfStock && (
+              <p className="mt-3 text-sm font-body text-sale font-bold">❌ Produto esgotado</p>
+            )}
+
+            {!isOutOfStock && product.stock !== undefined && product.stock <= 3 && product.stock > 0 && (
               <p className="mt-3 text-sm font-body text-sale font-medium">⚠️ Últimas {product.stock} peças em estoque!</p>
             )}
 
@@ -95,11 +128,7 @@ export default function ProductDetailPage() {
                 <h4 className="font-body text-sm font-medium mb-2">Cor</h4>
                 <div className="flex gap-2">
                   {product.colors.map(c => (
-                    <button
-                      key={c}
-                      onClick={() => setSelectedColor(c)}
-                      className={`px-4 py-2 rounded-lg text-sm font-body border transition-colors ${selectedColor === c ? "border-gold bg-gold/10" : "border-border"}`}
-                    >
+                    <button key={c} onClick={() => setSelectedColor(c)} className={`px-4 py-2 rounded-lg text-sm font-body border transition-colors ${selectedColor === c ? "border-gold bg-gold/10" : "border-border"}`}>
                       {c}
                     </button>
                   ))}
@@ -112,11 +141,7 @@ export default function ProductDetailPage() {
                 <h4 className="font-body text-sm font-medium mb-2">Tamanho</h4>
                 <div className="flex flex-wrap gap-2">
                   {product.sizes.map(s => (
-                    <button
-                      key={s}
-                      onClick={() => setSelectedSize(s)}
-                      className={`w-12 h-12 rounded-lg text-sm font-body border transition-colors flex items-center justify-center ${selectedSize === s ? "border-gold bg-gold/10 font-bold" : "border-border"}`}
-                    >
+                    <button key={s} onClick={() => setSelectedSize(s)} className={`w-12 h-12 rounded-lg text-sm font-body border transition-colors flex items-center justify-center ${selectedSize === s ? "border-gold bg-gold/10 font-bold" : "border-border"}`}>
                       {s}
                     </button>
                   ))}
@@ -130,11 +155,13 @@ export default function ProductDetailPage() {
                 <span className="px-3 font-body text-sm">{qty}</span>
                 <button onClick={() => setQty(qty + 1)} className="px-3 py-2"><Plus className="w-4 h-4" /></button>
               </div>
-              <button onClick={handleAddToCart} className="btn-gold flex-1">Adicionar ao Carrinho</button>
+              <button onClick={handleAddToCart} disabled={isOutOfStock} className={`btn-gold flex-1 ${isOutOfStock ? "opacity-50 cursor-not-allowed" : ""}`}>
+                {isOutOfStock ? "Esgotado" : "Adicionar ao Carrinho"}
+              </button>
             </div>
 
-            <button onClick={shareWhatsApp} className="mt-3 w-full btn-outline-dark text-sm flex items-center justify-center gap-2">
-              <Share2 className="w-4 h-4" /> Compartilhar no WhatsApp
+            <button onClick={shareLink} className="mt-3 w-full btn-outline-dark text-sm flex items-center justify-center gap-2">
+              <Copy className="w-4 h-4" /> Compartilhar
             </button>
 
             <div className="mt-6 flex items-center gap-2 text-sm font-body text-muted-foreground">
@@ -145,11 +172,7 @@ export default function ProductDetailPage() {
             <div className="mt-8 border-t border-border pt-6">
               <div className="flex gap-4 border-b border-border">
                 {(["desc", "sizes", "policy"] as const).map(tab => (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    className={`pb-3 text-sm font-body transition-colors ${activeTab === tab ? "border-b-2 border-gold text-foreground font-medium" : "text-muted-foreground"}`}
-                  >
+                  <button key={tab} onClick={() => setActiveTab(tab)} className={`pb-3 text-sm font-body transition-colors ${activeTab === tab ? "border-b-2 border-gold text-foreground font-medium" : "text-muted-foreground"}`}>
                     {tab === "desc" ? "Descrição" : tab === "sizes" ? "Guia de Tamanhos" : "Política de Troca"}
                   </button>
                 ))}

@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Search, Heart, ShoppingBag, Menu, X, Home, Grid3X3, ChevronRight } from "lucide-react";
 import { useState, useCallback } from "react";
 import { useCart } from "@/hooks/useCart";
@@ -7,11 +7,11 @@ import logo from "@/assets/logo.png";
 
 const navLinks = [
   { label: "Início", to: "/" },
-  { label: "Feminino", to: "/produtos" },
-  { label: "Masculino", to: "/produtos" },
-  { label: "Infantil", to: "/produtos" },
-  { label: "Acessórios", to: "/produtos" },
-  { label: "Promoções", to: "/produtos", isPromo: true },
+  { label: "Feminino", to: "/produtos?categoria=feminino" },
+  { label: "Masculino", to: "/produtos?categoria=masculino" },
+  { label: "Infantil", to: "/produtos?categoria=infantil" },
+  { label: "Acessórios", to: "/produtos?categoria=acessorios" },
+  { label: "Promoções", to: "/produtos?categoria=perfumes", isPromo: true },
 ];
 
 function AnnouncementBar() {
@@ -27,43 +27,36 @@ function Header() {
   const [searchOpen, setSearchOpen] = useState(false);
   const { totalItems, setIsOpen } = useCart();
   const location = useLocation();
+  const navigate = useNavigate();
 
-  const openMenu = useCallback(() => {
-    setMobileOpen(true);
-  }, []);
+  const openMenu = useCallback(() => setMobileOpen(true), []);
+  const closeMenu = useCallback(() => setMobileOpen(false), []);
 
-  const closeMenu = useCallback(() => {
-    setMobileOpen(false);
-  }, []);
+  const handleLogoClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (location.pathname === "/") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      navigate("/");
+    }
+  };
 
   return (
     <>
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button
-              type="button"
-              className="lg:hidden p-2 -ml-2 touch-manipulation"
-              onClick={openMenu}
-              aria-label="Abrir menu"
-            >
+            <button type="button" className="lg:hidden p-2 -ml-2 touch-manipulation" onClick={openMenu} aria-label="Abrir menu">
               <Menu className="w-6 h-6" />
             </button>
-            <Link to="/" className="flex items-center gap-2">
+            <a href="/" onClick={handleLogoClick} className="flex items-center gap-2">
               <img src={logo} alt="Alba Modas e Acessórios" className="h-12 md:h-14 w-auto object-contain" />
-            </Link>
+            </a>
           </div>
 
           <nav className="hidden lg:flex items-center gap-8 text-sm font-medium">
             {navLinks.map(l => (
-              <Link
-                key={l.label}
-                to={l.to}
-                className={`hover:text-gold transition-colors ${
-                  l.isPromo ? "text-sale font-semibold" :
-                  location.pathname === l.to ? "text-gold" : ""
-                }`}
-              >
+              <Link key={l.label} to={l.to} className={`hover:text-gold transition-colors ${l.isPromo ? "text-sale font-semibold" : ""}`}>
                 {l.label}
               </Link>
             ))}
@@ -73,9 +66,6 @@ function Header() {
             <button type="button" onClick={() => setSearchOpen(!searchOpen)} className="p-2 hover:bg-secondary rounded-full transition-colors" aria-label="Buscar">
               <Search className="w-5 h-5" />
             </button>
-            <Link to="/" className="p-2 hover:bg-secondary rounded-full transition-colors hidden sm:block" aria-label="Favoritos">
-              <Heart className="w-5 h-5" />
-            </Link>
             <button type="button" className="p-2 hover:bg-secondary rounded-full transition-colors relative" onClick={() => setIsOpen(true)} aria-label="Carrinho">
               <ShoppingBag className="w-5 h-5" />
               {totalItems > 0 && (
@@ -91,12 +81,7 @@ function Header() {
           <div className="border-t border-border px-4 py-3">
             <div className="max-w-xl mx-auto relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Buscar produtos..."
-                className="w-full pl-10 pr-4 py-2 rounded-lg bg-muted text-sm font-body focus:outline-none focus:ring-2 focus:ring-gold"
-                autoFocus
-              />
+              <input type="text" placeholder="Buscar produtos..." className="w-full pl-10 pr-4 py-2 rounded-lg bg-muted text-sm font-body focus:outline-none focus:ring-2 focus:ring-gold" autoFocus />
             </div>
           </div>
         )}
@@ -112,12 +97,7 @@ function Header() {
           </div>
           <nav className="flex-1 overflow-y-auto p-4 space-y-1">
             {navLinks.map(l => (
-              <Link
-                key={l.label}
-                to={l.to}
-                onClick={closeMenu}
-                className={`flex items-center justify-between py-3 px-2 text-lg font-body border-b border-border/50 ${l.isPromo ? "text-sale font-semibold" : ""}`}
-              >
+              <Link key={l.label} to={l.to} onClick={closeMenu} className={`flex items-center justify-between py-3 px-2 text-lg font-body border-b border-border/50 ${l.isPromo ? "text-sale font-semibold" : ""}`}>
                 {l.label}
                 <ChevronRight className="w-4 h-4 text-muted-foreground" />
               </Link>
@@ -179,18 +159,10 @@ function MobileBottomNav() {
           <Grid3X3 className="w-5 h-5" />
           <span>Categorias</span>
         </Link>
-        <button type="button" className="flex flex-col items-center gap-0.5 text-xs font-body text-muted-foreground">
-          <Search className="w-5 h-5" />
-          <span>Buscar</span>
-        </button>
         <button type="button" className="flex flex-col items-center gap-0.5 text-xs font-body text-muted-foreground relative" onClick={() => setIsOpen(true)}>
           <ShoppingBag className="w-5 h-5" />
           {totalItems > 0 && <span className="absolute -top-1 right-1 bg-gold text-gold-foreground text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{totalItems}</span>}
           <span>Carrinho</span>
-        </button>
-        <button type="button" className="flex flex-col items-center gap-0.5 text-xs font-body text-muted-foreground">
-          <Heart className="w-5 h-5" />
-          <span>Favoritos</span>
         </button>
       </div>
     </div>
