@@ -25,7 +25,7 @@ export default function HomePage() {
       {!loading && bestSellers.length > 0 && settings.sectionsVisible.bestSellers && <BestSellers products={bestSellers} />}
       {settings.sectionsVisible.testimonials && <Testimonials />}
       {settings.sectionsVisible.quemSomos && <QuemSomosPreview />}
-      {settings.sectionsVisible.instagram && <InstagramGrid />}
+      {settings.sectionsVisible.instagram && <InstagramGrid instagramLink={settings.instagramLink} instagramPhotos={settings.instagramPhotos} />}
     </>
   );
 }
