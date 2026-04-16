@@ -878,19 +878,43 @@ function CuponsTab() {
 
 // ==================== CONFIGURAÇÕES DO SITE ====================
 function ConfiguracoesTab() {
-  const [settings, setSettings] = useState<SiteSettings>(() => {
-    try {
-      const saved = localStorage.getItem("alba-site-settings");
-      return saved ? { ...defaultSettings, ...JSON.parse(saved) } : defaultSettings;
-    } catch { return defaultSettings; }
-  });
+  const [settings, setSettings] = useState<SiteSettings>(defaultSettings);
+  const [loadingSettings, setLoadingSettings] = useState(true);
 
-  const save = () => {
-    localStorage.setItem("alba-site-settings", JSON.stringify(settings));
-    // Dispatch storage event for same-tab listeners
-    window.dispatchEvent(new StorageEvent("storage", { key: "alba-site-settings", newValue: JSON.stringify(settings) }));
+  useEffect(() => {
+    const load = async () => {
+      const { data } = await supabase.from("site_settings").select("key, value");
+      if (data) {
+        const map: Record<string, any> = {};
+        data.forEach((r: any) => { map[r.key] = r.value; });
+        setSettings({
+          heroText: map.general?.heroText ?? defaultSettings.heroText,
+          heroSubtext: map.general?.heroSubtext ?? defaultSettings.heroSubtext,
+          heroImage: map.general?.heroImage ?? defaultSettings.heroImage,
+          announcementText: map.general?.announcementText ?? defaultSettings.announcementText,
+          sectionsVisible: { ...defaultSettings.sectionsVisible, ...(map.sections_visible ?? {}) },
+          instagramLink: map.instagram?.link ?? "",
+          instagramPhotos: map.instagram?.photos ?? [],
+        });
+      }
+      setLoadingSettings(false);
+    };
+    load();
+  }, []);
+
+  const save = async () => {
+    const general = { heroText: settings.heroText, heroSubtext: settings.heroSubtext, heroImage: settings.heroImage, announcementText: settings.announcementText };
+    const sections = settings.sectionsVisible;
+    const instagram = { link: settings.instagramLink, photos: settings.instagramPhotos };
+
+    const upsert = async (key: string, value: any) => {
+      await supabase.from("site_settings").upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: "key" });
+    };
+    await Promise.all([upsert("general", general), upsert("sections_visible", sections), upsert("instagram", instagram)]);
     toast.success("Configurações salvas!");
   };
+
+  if (loadingSettings) return <div className="text-center py-8 text-muted-foreground font-body">Carregando...</div>;
 
   return (
     <div>
@@ -939,6 +963,47 @@ function ConfiguracoesTab() {
         <div className="bg-card rounded-xl p-5 shadow-sm space-y-4">
           <h3 className="font-heading text-lg">Barra de Anúncio</h3>
           <input value={settings.announcementText} onChange={e => setSettings(s => ({ ...s, announcementText: e.target.value }))} className="w-full px-3 py-2 rounded-lg bg-muted text-sm font-body border border-border" />
+        </div>
+
+        <div className="bg-card rounded-xl p-5 shadow-sm space-y-4">
+          <h3 className="font-heading text-lg">Instagram</h3>
+          <div>
+            <label className="block text-xs font-body text-muted-foreground mb-1">Link do Instagram (ex: https://instagram.com/albamodas)</label>
+            <input value={settings.instagramLink} onChange={e => setSettings(s => ({ ...s, instagramLink: e.target.value }))} placeholder="https://instagram.com/seuperfil" className="w-full px-3 py-2 rounded-lg bg-muted text-sm font-body border border-border" />
+          </div>
+          <div>
+            <label className="block text-xs font-body text-muted-foreground mb-1">Fotos do Instagram (até 6)</label>
+            <div className="grid grid-cols-3 gap-2 mb-2">
+              {settings.instagramPhotos.map((url, i) => (
+                <div key={i} className="relative aspect-square rounded-lg overflow-hidden group">
+                  <img src={url} alt={`Instagram ${i + 1}`} className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => setSettings(s => ({ ...s, instagramPhotos: s.instagramPhotos.filter((_, idx) => idx !== i) }))}
+                    className="absolute top-1 right-1 bg-foreground/70 text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                  >✕</button>
+                </div>
+              ))}
+            </div>
+            {settings.instagramPhotos.length < 6 && (
+              <input
+                type="file"
+                accept="image/*"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const ext = file.name.split(".").pop();
+                  const path = `instagram/ig-${Date.now()}.${ext}`;
+                  const { error } = await supabase.storage.from("product-images").upload(path, file, { upsert: true });
+                  if (error) { toast.error("Erro ao enviar imagem"); return; }
+                  const { data: { publicUrl } } = supabase.storage.from("product-images").getPublicUrl(path);
+                  setSettings(s => ({ ...s, instagramPhotos: [...s.instagramPhotos, publicUrl] }));
+                  toast.success("Foto adicionada!");
+                }}
+                className="w-full text-sm font-body"
+              />
+            )}
+          </div>
         </div>
 
         <div className="bg-card rounded-xl p-5 shadow-sm space-y-4">
