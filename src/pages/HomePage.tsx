@@ -86,7 +86,7 @@ function CategoriesGrid({ categories }: { categories: { name: string; slug: stri
   return (
     <section className="py-16 max-w-7xl mx-auto px-4">
       <h2 className="font-heading text-2xl md:text-3xl text-center mb-8">Explore por Categoria</h2>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
         {categories.map(cat => (
           <Link
             to={`/produtos?categoria=${cat.slug}`}
@@ -121,9 +121,9 @@ function ProductSection({ title, products, scrollable = false }: { title: string
           </Link>
         </div>
         {scrollable ? (
-          <div className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory hide-scrollbar">
+          <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory hide-scrollbar">
             {products.map(p => (
-              <div key={p.id} className="min-w-[150px] max-w-[170px] sm:min-w-[170px] sm:max-w-[190px] snap-start flex-shrink-0">
+              <div key={p.id} className="min-w-[200px] max-w-[240px] sm:min-w-[230px] sm:max-w-[260px] snap-start flex-shrink-0">
                 <ProductCard product={p} compact />
               </div>
             ))}
@@ -148,7 +148,7 @@ function BestSellers({ products }: { products: any[] }) {
             Ver Todos <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
-        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {products.map(p => <ProductCard key={p.id} product={p} compact />)}
         </div>
       </div>
