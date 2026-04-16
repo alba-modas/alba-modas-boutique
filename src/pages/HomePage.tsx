@@ -211,25 +211,32 @@ function QuemSomosPreview() {
   );
 }
 
-function InstagramGrid() {
-  const igPhotos = [
+function InstagramGrid({ instagramLink, instagramPhotos }: { instagramLink: string; instagramPhotos: string[] }) {
+  const fallbackPhotos = [
     "photo-1558618666-fcd25c85f82e", "photo-1469334031218-e382a71b716b",
     "photo-1485968579580-b6d095142e6e", "photo-1492707892479-7bc8d5a4ee93",
     "photo-1487222477894-8943e31ef7b2", "photo-1529139574466-a303027c1d8b",
   ];
+  const photos = instagramPhotos.length > 0 ? instagramPhotos : null;
+  const link = instagramLink || "https://instagram.com";
+
   return (
     <section className="py-16">
       <div className="max-w-7xl mx-auto px-4 text-center">
         <h2 className="font-heading text-2xl md:text-3xl mb-2">Siga {INSTAGRAM}</h2>
         <p className="font-body text-sm text-muted-foreground mb-8">Inspiração e novidades todos os dias</p>
         <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
-          {igPhotos.map(id => (
-            <a key={id} href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="aspect-square overflow-hidden rounded-lg group">
+          {photos ? photos.map((url, i) => (
+            <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="aspect-square overflow-hidden rounded-lg group">
+              <img src={url} alt="Instagram" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" loading="lazy" />
+            </a>
+          )) : fallbackPhotos.map(id => (
+            <a key={id} href={link} target="_blank" rel="noopener noreferrer" className="aspect-square overflow-hidden rounded-lg group">
               <img src={`https://images.unsplash.com/${id}?auto=format&fit=crop&w=300&q=80`} alt="Instagram" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" loading="lazy" />
             </a>
           ))}
         </div>
-        <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="btn-outline-dark mt-8 inline-flex">
+        <a href={link} target="_blank" rel="noopener noreferrer" className="btn-outline-dark mt-8 inline-flex">
           Seguir no Instagram
         </a>
       </div>
